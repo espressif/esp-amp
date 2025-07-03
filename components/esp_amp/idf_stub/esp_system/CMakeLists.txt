@@ -2,10 +2,6 @@ set(srcs
     "syscalls.c"
 )
 
-if(CONFIG_IDF_TARGET_ARCH_RISCV)
-    list(APPEND srcs "port/arch/riscv/panic_handler.c")
-endif()
-
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND srcs
         "port/soc/esp32p4/portasm.S"

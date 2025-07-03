@@ -57,6 +57,7 @@ idf_build_set_property(COMPILE_OPTIONS "-fno-builtin-putchar" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-builtin-fprintf" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-builtin-vprintf" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-builtin-puts" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-fno-builtin-abort" APPEND)
 
 idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=printf" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=putc" APPEND)
@@ -64,10 +65,12 @@ idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=putchar" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=fprintf" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=vprintf" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=puts" APPEND)
+idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=abort" APPEND)
 
 idf_build_set_property(LINK_OPTIONS "-Wl,--defsym=__wrap_printf=esp_amp_subcore_printf" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--defsym=__wrap_puts=esp_amp_subcore_puts" APPEND)
 idf_build_set_property(LINK_OPTIONS "-Wl,--defsym=__wrap_putchar=esp_amp_subcore_putchar" APPEND)
+idf_build_set_property(LINK_OPTIONS "-Wl,--defsym=__wrap_abort=esp_amp_subcore_abort" APPEND)
 
 # esp-amp related flags
 idf_build_set_property(COMPILE_DEFINITIONS "IS_ENV_BM=1" APPEND)

@@ -18,7 +18,7 @@ set(srcs_common
 
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_print.c"
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_service.c"
-    "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_panic.c"
+    "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_panic/panic_common.c"
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_system.c"
 )
 
@@ -41,6 +41,7 @@ if(BOOTLOADER_BUILD)
         ${srcs_common}
         "${ESP_AMP_PATH}/components/esp_amp/src/event/baremetal/esp_amp_event.c"
         "${ESP_AMP_PATH}/components/esp_amp/port/env/baremetal/esp_amp_env.c"
+        "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_panic/panic_subcore.c"
     )
 
     if(CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE)
@@ -133,6 +134,7 @@ else()
 
             "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_loader.c"
             "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_cpu.c"
+            "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_panic/panic_maincore.c"
         )
 
         if(CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE)
