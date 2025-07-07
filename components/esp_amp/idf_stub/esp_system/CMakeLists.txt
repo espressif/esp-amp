@@ -27,3 +27,4 @@ idf_component_register(
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE m)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u subcore_panic_dump")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_amp_include_syscalls_impl")

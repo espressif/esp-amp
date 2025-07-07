@@ -56,3 +56,7 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
     printf("Assert failed in %s, %s:%d (%s)\r\n", func, file, line, expr);
     while (1);
 }
+
+void esp_amp_include_syscalls_impl(void)
+{
+}
