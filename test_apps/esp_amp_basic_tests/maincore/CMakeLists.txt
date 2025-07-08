@@ -7,6 +7,7 @@ set(app_sources
     "test_sw_intr_main.c"
     "test_event_main.c"
     "test_libc_main.c"
+    "test_panic_main.c"
 )
 
 idf_component_register(
