@@ -2,10 +2,6 @@ set(srcs
     "syscalls.c"
 )
 
-if(CONFIG_IDF_TARGET_ARCH_RISCV)
-    list(APPEND srcs "port/arch/riscv/panic_handler.c")
-endif()
-
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND srcs
         "port/soc/esp32p4/portasm.S"
@@ -27,3 +23,4 @@ idf_component_register(
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE m)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u subcore_panic_dump")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_amp_include_syscalls_impl")

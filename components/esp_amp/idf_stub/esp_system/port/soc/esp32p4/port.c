@@ -9,5 +9,6 @@
  */
 void vPortCoprocUsedInISR(void* frame)
 {
+    extern void xt_unhandled_exception(void* frame);
     xt_unhandled_exception(frame);
 }
