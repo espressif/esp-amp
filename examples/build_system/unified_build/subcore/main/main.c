@@ -19,7 +19,7 @@ int main(void)
     greeting();
     assert(esp_amp_init() == 0);
     esp_amp_event_notify(EVENT_SUBCORE_READY);
-    abort();
+
     while(1) {
         printf("SUB: Running...\r\n");
         /* CONFIG_SUBCORE_MAIN_DELAY_MS defined in components/sub_main_cfg */
