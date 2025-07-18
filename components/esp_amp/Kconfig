@@ -23,7 +23,6 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
         config ESP_AMP_SUBCORE_TYPE_HP_CORE
             bool "HP Core"
             depends on IDF_TARGET_ESP32P4
-            select ESP_AMP_SUBCORE_USE_HP_MEM
             select FREERTOS_UNICORE
     endchoice
 
@@ -53,19 +52,36 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
                 the size is large enough. Application can also allocate buffer from this
                 shared memory using SysInfo API.
 
-        config ESP_AMP_SUBCORE_USE_HP_MEM
-            bool "Load subcore firmware into HP RAM"
-            default "n"
+        config ESP_AMP_RTC_SHARED_MEM_SIZE
+            int "Size of shared memory (from RTC RAM) accessible by maincore and subcore"
+            depends on ESP_AMP_SUBCORE_TYPE_LP_CORE
+            default 256
+            range 2 1024
             help
-                Enable this feature to load subcore firmware into HP RAM. For LP subcore,
-                this feature is disabled by default and LP subcore firmware will be loaded
-                entirely into RTC RAM. If enabled, LP subcore firmware (except for vector
-                table and reset vector) can also be loaded into HP RAM. For HP subcore, this
-                feature must be enabled.
+                Configure the size of shared memory (from RTC RAM) accessible by maincore
+                and subcore. Different from HP RAM, RTC RAM is accessible during light
+                sleep.
+
+                ESP-AMP components internally allocate buffer from this shared memory,
+                such as virtqueue buffers, event and software interrupt bits. Make sure
+                the size is large enough. Application can also allocate buffer from this
+                shared memory using SysInfo API.
+
+        config ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+            bool "Pure RTC RAM app"
+            depends on ESP_AMP_SUBCORE_TYPE_LP_CORE
+            default n
+            help
+                Use this if your subcore app is small enough and needs to run entirely
+                from RTC memory (RTC memory is not affected by maincore light sleep).
+
+                This option is a escape hatch for those who don't want to configure
+                linker fragments with their light sleep enabled setup. Please refer
+                to doc/light_sleep.md for more details.
 
         config ESP_AMP_SUBCORE_USE_HP_MEM_SIZE
             int "Maximum size of HP RAM to load subcore firmware"
-            depends on ESP_AMP_SUBCORE_USE_HP_MEM
+            depends on !ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
             default 16384 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
             default 65536 if IDF_TARGET_ESP32P4
             range 16384 49152 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
@@ -94,8 +110,8 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
         config ESP_AMP_SUBCORE_HEAP_SIZE
             int "Size of heap for subcore app"
             depends on ESP_AMP_SUBCORE_ENABLE_HEAP
-            default 512 if ((IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5) && !ESP_AMP_SUBCORE_USE_HP_MEM)
-            default 4096 if ((IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5) && ESP_AMP_SUBCORE_USE_HP_MEM)
+            default 512 if ((IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5) && ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP)
+            default 4096 if ((IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5) && !ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP)
             default 16384 if IDF_TARGET_ESP32P4
             range 0 16384 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
             range 0 65536 if IDF_TARGET_ESP32P4

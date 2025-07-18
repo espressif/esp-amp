@@ -1,0 +1,183 @@
+#include "sdkconfig.h"
+#include "ld.common"
+#include "esp_amp_mem_priv.h"
+
+ENTRY(reset_vector)
+
+SECTIONS
+{
+    .flash.appdesc :
+    {
+        *(.rodata_desc .rodata_desc.*)
+    } > app_desc
+
+    .vector.text :
+    {
+        /*exception/interrupt vectors*/
+        __mtvec_base = .;
+        KEEP (*(.init.vector .init.vector.*))
+    } > vector_table
+
+    . = ORIGIN(rtc_ram);
+
+    .text.vectors ALIGN(4):
+    {
+        *(.text.vectors)  /* Default reset vector must in RTC RAM */
+        *(.text.handlers) /* Interrupt & panic handlers */
+    } > rtc_ram
+
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+    KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } > rtc_ram
+
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+    KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  } > rtc_ram
+
+  .ctors :
+  {
+    KEEP (*crtbegin.o(.ctors))
+    KEEP (*crtbegin?.o(.ctors))
+    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .ctors))
+    KEEP (*(SORT(.ctors.*)))
+    KEEP (*(.ctors))
+  } > rtc_ram
+
+  .dtors :
+  {
+    KEEP (*crtbegin.o(.dtors))
+    KEEP (*crtbegin?.o(.dtors))
+    KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o ) .dtors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+  } > rtc_ram
+
+/* NOTE: for mapping, please refer to app.lf */
+
+#if CONFIG_ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+
+  .text ALIGN(4):
+  {
+    mapping[text]
+    mapping[rtc_text]
+  } > rtc_ram
+
+  .rodata ALIGN(4):
+  {
+    mapping[rodata]
+    mapping[rtc_rodata]
+  } > rtc_ram
+
+  .data ALIGN(4):
+  {
+    mapping[data]
+    mapping[rtc_data]
+  } > rtc_ram
+
+  .bss ALIGN(4):
+  {
+    mapping[bss]
+    mapping[rtc_bss]
+  } > rtc_ram
+
+  . = ALIGN(8);
+  _end = .;
+  PROVIDE (end = .);
+
+#if CONFIG_ESP_AMP_SUBCORE_ENABLE_HEAP
+  __heap_start = .;
+  . += CONFIG_ESP_AMP_SUBCORE_HEAP_SIZE;
+  __heap_end = ALIGN(8);
+#endif
+
+#else
+
+  .text ALIGN(4):
+  {
+    mapping[rtc_text]
+  } > rtc_ram
+
+  .rodata ALIGN(4):
+  {
+    mapping[rtc_rodata]
+  } > rtc_ram
+
+  .data ALIGN(4):
+  {
+    mapping[rtc_data]
+  } > rtc_ram
+
+  .bss ALIGN(4):
+  {
+    mapping[rtc_bss]
+  } > rtc_ram
+
+  . = ALIGN(8);
+  _end = .;
+  PROVIDE (end = .);
+
+  . = ORIGIN(hp_ram);
+
+  .text ALIGN(4):
+  {
+    mapping[text]
+  } > hp_ram
+
+  .rodata ALIGN(4):
+  {
+    mapping[rodata]
+  } > hp_ram
+
+  .data ALIGN(4):
+  {
+    mapping[data]
+  } > hp_ram
+
+  .bss ALIGN(4):
+  {
+    mapping[bss]
+  } > hp_ram
+
+  . = ALIGN(8);
+  _end = .;
+  PROVIDE (end = .);
+
+#if CONFIG_ESP_AMP_SUBCORE_ENABLE_HEAP
+  __heap_start = .;
+  . += CONFIG_ESP_AMP_SUBCORE_HEAP_SIZE;
+  __heap_end = ALIGN(8);
+#endif
+
+  /* we need end_maker to tell loader where bss ends */
+  .end_marker ALIGN(4):
+  {
+    LONG(0x050a050a)
+    LONG(0x050a050a)
+  } > hp_ram
+
+#endif
+
+  .stack :
+  {
+    __stack_bottom = .;
+    __stack_size_min = CONFIG_ESP_AMP_SUBCORE_STACK_SIZE_MIN;
+    __stack_top = ORIGIN(rtc_ram) + LENGTH(rtc_ram);
+    ASSERT(__stack_top - __stack_bottom >= __stack_size_min, "Error: no space for stack");
+  } > rtc_ram
+
+  . = ORIGIN(ulp_shared_mem);
+  .shared_mem ALIGN(4):
+  {
+    KEEP(*(.shared_mem))
+  } > ulp_shared_mem
+
+#include "elf_misc.ld.in"
+}

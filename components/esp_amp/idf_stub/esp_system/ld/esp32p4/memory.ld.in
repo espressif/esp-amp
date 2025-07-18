@@ -1,0 +1,9 @@
+#include "sdkconfig.h"
+#include "ld.common"
+#include "esp_amp_mem_priv.h"
+
+MEMORY
+{
+  app_desc(rw): ORIGIN = 0x40000020 , LENGTH = 0x100
+  ram (rwx): ORIGIN = SUBCORE_USE_HP_MEM_START, LENGTH = SUBCORE_USE_HP_MEM_SIZE
+}

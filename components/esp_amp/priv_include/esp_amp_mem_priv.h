@@ -1,5 +1,5 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -16,7 +16,7 @@
 #define ESP_AMP_SHARED_MEM_END 0x4ff7f000
 #endif
 
-#define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
+#define ALIGN_DOWN(size, align) ((size) & ~((align) - 1))
 
 /* shared memory region */
 #if CONFIG_ESP_AMP_SHARED_MEM_IN_HP
@@ -40,8 +40,8 @@
 #define ESP_AMP_SHARED_MEM_POOL_SIZE (ESP_AMP_SHARED_MEM_END - ESP_AMP_SHARED_MEM_POOL_START)
 
 /* hp memory for subcore use */
-#if CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM
-#define SUBCORE_USE_HP_MEM_END ESP_AMP_SHARED_MEM_START
+#if CONFIG_ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+#define SUBCORE_USE_HP_MEM_END ESP_AMP_HP_SHARED_MEM_START
 #define SUBCORE_USE_HP_MEM_SIZE CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM_SIZE
 #define SUBCORE_USE_HP_MEM_START (SUBCORE_USE_HP_MEM_END - SUBCORE_USE_HP_MEM_SIZE)
 #endif

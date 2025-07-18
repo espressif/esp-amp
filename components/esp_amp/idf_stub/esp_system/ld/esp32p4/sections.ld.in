@@ -1,55 +1,25 @@
-/*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include "sdkconfig.h"
 #include "ld.common"
 #include "esp_amp_mem_priv.h"
-
-MEMORY
-{
-  app_desc(rw): ORIGIN = 0x40000020 , LENGTH = 0x100
-  ram (rwx): ORIGIN = SUBCORE_USE_HP_MEM_START, LENGTH = SUBCORE_USE_HP_MEM_SIZE
-}
 
 ENTRY(_start)
 
 SECTIONS
 {
-  .flash.appdesc : ALIGN(0x10)
+  .flash.appdesc :
   {
     *(.rodata_desc .rodata_desc.*)
   } > app_desc
 
   . = ORIGIN(ram);
-  .text.entry ORIGIN(ram):
+
+  .text.entry :
   {
     . = ALIGN(0x40);
     ASSERT(ABSOLUTE(.) % 0x40 == 0, "vector address must be 64 byte aligned");
     KEEP(*(.exception_vectors_table.text));
     KEEP(*(.exception_vectors.text));
     KEEP(*(.text.entry))
-  } > ram
-
-  .iram1.0 ALIGN(4):
-  {
-      *(.iram1.*)
-  } > ram
-
-  .text :
-  {
-    *(.text .stub .text.* .gnu.linkonce.t.*)
-    *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*)
-    *(.gnu.warning)
-  } > ram
-  . = ALIGN(4);
-
-  .rodata :
-  {
-    *(.rodata .rodata1 .rodata.* .srodata .srodata.* .sdata2 .sdata2.* .gnu.linkonce.r.*)
-    *(.rela.data .rela.data.* .rela.gnu.linkonce.r.*)
   } > ram
 
   .init_array :
@@ -86,50 +56,44 @@ SECTIONS
     KEEP (*(.dtors))
   } > ram
 
-  PROVIDE (__etext = .);
-  PROVIDE (_etext = .);
-  PROVIDE (etext = .);
+  .text ALIGN(4):
+  {
+    mapping[text]
+  } > ram
 
-  .data :
+  .rodata ALIGN(4):
   {
-    _data_start = .;
+    mapping[rodata]
+  } > ram
+
+  .data ALIGN(4):
+  {
     __DATA_BEGIN__ = .;
-    *(.data .data.* .gnu.linkonce.d.*)
-    *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*) *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
-    SORT(CONSTRUCTORS)
+    mapping[data]
   } > ram
-  .data1 :
-  {
-    *(.dram1 .dram1.*)
-    *(.data1)
-  } > ram
-  .sdata :
+
+  .sdata ALIGN(4):
   {
     __SDATA_BEGIN__ = .;
     *(.sdata .sdata.* .gnu.linkonce.s.*)
-  } > ram
+  }
   . = ALIGN(4);
-  _edata = .; PROVIDE (edata = .);
-  _data_size = _edata - _data_start;
+  _edata = .; 
+  PROVIDE (edata = .);
 
-  __bss_start = .;
-  .sbss           :
+  .bss ALIGN(4):
   {
-    *(.dynsbss)
-    *(.sbss .sbss.* .gnu.linkonce.sb.*)
-    *(.scommon)
+    mapping[bss]
   } > ram
-  .bss            :
-  {
-   *(.dynbss)
-   *(.bss .bss.* .gnu.linkonce.b.*)
-   *(COMMON)
-  } > ram
+
   . = ALIGN(8);
+  _end = .;
   __BSS_END__ = .;
-  __global_pointer$ = MIN(__SDATA_BEGIN__ + 0x800,
-                          MAX(__DATA_BEGIN__ + 0x800, __BSS_END__ - 0x800));
-  _end = .; PROVIDE (end = .);
+  __global_pointer$ = MIN(
+    __SDATA_BEGIN__ + 0x800,
+    MAX(__DATA_BEGIN__ + 0x800, __BSS_END__ - 0x800)
+  );
+  PROVIDE (end = .);
 
 #if CONFIG_ESP_AMP_SUBCORE_ENABLE_HEAP
   __heap_start = .;
@@ -137,7 +101,6 @@ SECTIONS
   __heap_end = ALIGN(8);
 #endif
 
-  /* Stack */
   .stack :
   {
     __stack_bottom = .;
@@ -148,7 +111,7 @@ SECTIONS
 
   . = __stack_top;
 
-  .hpram.end_marker ALIGN(4) :
+  .hpram.end_marker ALIGN(4):
   {
       LONG(0x050a050a)
       LONG(0x050a050a)

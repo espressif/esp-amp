@@ -23,7 +23,11 @@ endif()
 
 idf_component_register(
     SRCS ${srcs}
-    REQUIRES hal riscv esp_rom)
+    REQUIRES hal riscv esp_rom
+    LDFRAGMENTS "app.lf"
+)
+
+include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE m)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u subcore_panic_dump")

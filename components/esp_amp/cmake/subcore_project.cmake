@@ -7,7 +7,21 @@ if(NOT DEFINED IDF_TARGET)
 endif()
 
 ## set bootloader build components
-set(COMPONENTS bootloader esptool_py esp_hw_support esp_system freertos hal partition_table soc bootloader_support log spi_flash micro-ecc main efuse esp_system newlib CACHE STRING "" FORCE)
+set(COMPONENTS bootloader
+               esptool_py
+               esp_hw_support
+               esp_system
+               freertos
+               hal
+               partition_table
+               soc
+               bootloader_support
+               log
+               spi_flash
+               micro-ecc
+               main
+               efuse
+               newlib CACHE STRING "" FORCE)
 set(common_req log esp_rom esp_common esp_hw_support newlib esptool_py hal CACHE STRING "" FORCE)
 
 list(APPEND EXTRA_COMPONENT_DIRS
