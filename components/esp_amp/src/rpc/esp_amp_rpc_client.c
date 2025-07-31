@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,11 @@ static int IRAM_ATTR client_cb(void* data, uint16_t data_len, uint16_t src_addr,
 
     /* if response to current pending request, copy response data to response buffer */
     if (client_inst->pending_cmd != NULL && resp_pkt->msg_id == client_inst->pending_id) {
-        client_inst->pending_cmd->resp_len = resp_pkt->msg_len;
         client_inst->pending_cmd->status = resp_pkt->status;
 
         if (resp_pkt->msg_len > 0 && client_inst->pending_cmd->resp_data != NULL) {
-            int cpy_len = resp_pkt->msg_len > client_inst->pending_cmd->resp_len ? client_inst->pending_cmd->resp_len : resp_pkt->msg_len;
+            int cpy_len = resp_pkt->msg_len > client_inst->pending_cmd->resp_len ?
+                          client_inst->pending_cmd->resp_len : resp_pkt->msg_len;
             memcpy(client_inst->pending_cmd->resp_data, resp_pkt->msg_data, cpy_len);
         }
 
@@ -92,6 +92,9 @@ int esp_amp_rpc_client_execute_cmd(esp_amp_rpc_client_t client, esp_amp_rpc_cmd_
     cmd->status = ESP_AMP_RPC_STATUS_PENDING;
 
     /* fetch new buffer from buffer pool */
+    if (cmd->req_len > UINT16_MAX - sizeof(esp_amp_rpc_pkt_t)) {
+        return ESP_AMP_RPC_ERR_INVALID_SIZE;
+    }
     uint16_t req_pkt_len = cmd->req_len + sizeof(esp_amp_rpc_pkt_t);
     uint8_t *req_pkt_buf = (uint8_t *)esp_amp_rpmsg_create_message(client_inst->rpmsg_dev, req_pkt_len, ESP_AMP_RPMSG_DATA_DEFAULT);
     if (req_pkt_buf == NULL) {

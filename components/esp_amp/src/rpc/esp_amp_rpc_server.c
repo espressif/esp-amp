@@ -48,7 +48,7 @@ esp_amp_rpc_server_t esp_amp_rpc_server_init(esp_amp_rpc_server_cfg_t *cfg)
     }
 
     /* clear storage buffer before use */
-    memset(cfg->srv_tbl_stg, 0, sizeof(esp_amp_rpc_server_t) * cfg->srv_tbl_len);
+    memset(cfg->srv_tbl_stg, 0, sizeof(esp_amp_rpc_service_t) * cfg->srv_tbl_len);
 
     int ret = esp_amp_env_queue_create(&server_inst->queue, cfg->queue_len, sizeof(esp_amp_rpc_pkt_digest_t));
     if (ret != 0) {
@@ -77,6 +77,17 @@ void esp_amp_rpc_server_deinit(esp_amp_rpc_server_t server)
     }
 
     void *queue = server_inst->queue;
+
+    esp_amp_env_enter_critical();
+    // First stop accepting new requests
+    server_inst->running = false;
+    esp_amp_env_exit_critical();
+
+    // Drain pending messages to prevent resource leaks
+    esp_amp_rpc_pkt_digest_t req_pkt_digest;
+    while (queue && esp_amp_env_queue_recv(queue, &req_pkt_digest, 0) == 0) {
+        esp_amp_rpmsg_destroy(server_inst->rpmsg_dev, req_pkt_digest.pkt);
+    }
 
     esp_amp_env_enter_critical();
     esp_amp_rpmsg_delete_endpoint(server_inst->rpmsg_dev, server_inst->server_id);
@@ -187,6 +198,10 @@ static void exec_cmd_and_send(esp_amp_rpc_server_inst_t *server_inst, esp_amp_rp
     if (cmd.resp_len > 0) {
         uint16_t resp_pkt_buf_max_len = esp_amp_rpmsg_get_max_size(server_inst->rpmsg_dev);
         uint8_t *resp_pkt_buf = esp_amp_rpmsg_create_message(server_inst->rpmsg_dev, resp_pkt_buf_max_len, ESP_AMP_RPMSG_DATA_DEFAULT);
+        if (resp_pkt_buf == NULL) {
+            return;
+        }
+
         uint16_t msg_max_len = resp_pkt_buf_max_len - sizeof(esp_amp_rpc_pkt_t);
         uint16_t msg_len = cmd.resp_len > msg_max_len ? msg_max_len : cmd.resp_len;
         esp_amp_rpc_pkt_t resp_pkt = {
