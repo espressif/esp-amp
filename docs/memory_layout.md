@@ -24,7 +24,6 @@ The following diagram shows the memory layout of ESP32-P4 HP RAM with HP subcore
 
 ![mem_layout_p4](./imgs/esp_amp_mem_layout_p4.png)
 
-
 ### Shared Memory Region
 
 Shared memory is allocated from HP MEM. Although RTC RAM (LP MEM) is also accessible by both HP core and LP core, atomic operation is not supported by RTC RAM. Consistency of shared memory cannot be guaranteed in this case.
@@ -34,9 +33,6 @@ Since AMP component allocate their data from shared memory, especially for queue
 ### Subcore Firmware Region
 
 If subcore is LP core, subcore firmware can be loaded entirely into RTC RAM. However, the 16KB size of RTC RAM can quickly go short as LP core firmware grows. Meanwhile, some features such as [deep sleep wake stubs](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32c6/api-guides/deep-sleep-stub.html) and [ESP Insights](https://insights.espressif.com/) also consume RTC RAM, which further limits the capability of RTC RAM to hold subcore firmware.
-
-To solve the problem, set `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM=y` to load subcore firmware into HP RAM. Size of memory can be configured via `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM_SIZE`. For ESP32-C5 and ESP32-C6, the maximum size is 48KB. For ESP32-P4, the maximum size is 192KB.
-
 
 ## Usage
 
@@ -50,13 +46,7 @@ Proper synchronization is necessary to avoid conflicts when shared memory is acc
 
 ### Sdkconfig Options
 
-* `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM`: If subcore firmware cannot fit into RTCRAM, part of HP RAM can be reserved for subcore to load and run its firmware in HP RAM.
-* `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM_SIZE`: This specifies the size of HP RAM used for subcore firmware.
-* `CONFIG_ESP_AMP_SUBCORE_STACK_SIZE_MIN`: This specifies the minimum stack size of subcore. Stack is allocated from RTC RAM on ESP32-C5 and ESP32-C6, and HP RAM on ESP32-P4. If the remaining RAM is insufficient for subcore stack, build will fail. The actual size of stack can be larger than this value if the subcore type is LP core. The entire unused RTC RAM is allocated for subcore stack.
-* `ESP_AMP_SUBCORE_ENABLE_HEAP`: Enable heap for subcore.
-* `CONFIG_ESP_AMP_SUBCORE_HEAP_SIZE`: This specifies the size of heap for subcore.
-
-
-## Application Examples
-
-* [subcore_use_hp_ram](../examples/subcore_use_hp_ram): demonstrates how to load subcore firmware into HP RAM.
+- `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM_SIZE`: This specifies the maximum size of HP RAM to load subcore firmware. Unused part will be given back to maincore heap automatically.
+- `CONFIG_ESP_AMP_SUBCORE_STACK_SIZE_MIN`: This specifies the minimum stack size of subcore. Stack is allocated from RTC RAM on ESP32-C5 and ESP32-C6, and HP RAM on ESP32-P4. If the remaining RAM is insufficient for subcore stack, build will fail. The actual size of stack can be larger than this value if the subcore type is LP core. The entire unused RTC RAM is allocated for subcore stack.
+- `ESP_AMP_SUBCORE_ENABLE_HEAP`: Enable heap for subcore.
+- `CONFIG_ESP_AMP_SUBCORE_HEAP_SIZE`: This specifies the size of heap for subcore.
