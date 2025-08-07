@@ -1,0 +1,18 @@
+[project]
+name = "esp-amp-basic-tests"
+version = "0.1.0"
+description = "This file stop uv from complaining, do not delete!!!"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "idf-build-apps>=2.10.1",
+    "minio>=7.2.15",
+    "pytest-embedded-idf>=1.16.1",
+    "pytest-embedded-jtag>=1.16.1",
+    "pytest-embedded-qemu>=1.16.1",
+    "pytest-embedded-serial-esp>=1.16.1",
+    "pytest-ignore-test-results>=0.3.0",
+    "pytest-rerunfailures>=15.1",
+    "pytest-timeout>=2.4.0",
+    "python-gitlab>=5.6.0",
+]
