@@ -1,5 +1,5 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+* SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -42,13 +42,16 @@ void esp_amp_platform_delay_us(uint32_t time);
 
 
 /**
- * Get current cpu cycle as time
+ * @brief Get system timestamp in milliseconds
  *
- * On RISC-V platform, this is done by reading mcycle & mcycleh CSR
+ * @note on subcore, mcycle & mcycleh CSR is used to get timestamp
+ * @note on maincore, esp_system_get_time() is used to get timestamp
+ * @note mcycle stops counting when cpu is in sleep mode
+ * @note timestamp on maincore and subcore can be different
  *
- * @retval current cpu cycle
+ * @retval current timestamp in milliseconds
  */
-uint32_t esp_amp_platform_get_time_ms(void);
+int64_t esp_amp_platform_get_time_ms(void);
 
 
 /**

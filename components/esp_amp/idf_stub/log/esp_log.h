@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 extern int esp_amp_subcore_early_printf(const char *fmt, ...);
-extern uint32_t esp_amp_platform_get_time_ms(void);
+extern int64_t esp_amp_platform_get_time_ms(void);
 
 typedef enum {
     ESP_LOG_NONE,       /*!< No log output */
@@ -57,11 +57,11 @@ typedef enum {
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\r\n"
 
 #define ESP_LOG_LEVEL(print_func, level, tag, format, ...) do { \
-        if (level==ESP_LOG_ERROR )          { print_func(LOG_FORMAT(E, format), esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
-        else if (level==ESP_LOG_WARN )      { print_func(LOG_FORMAT(W, format), esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
-        else if (level==ESP_LOG_DEBUG )     { print_func(LOG_FORMAT(D, format), esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
-        else if (level==ESP_LOG_VERBOSE )   { print_func(LOG_FORMAT(V, format), esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
-        else                                { print_func(LOG_FORMAT(I, format), esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
+        if (level==ESP_LOG_ERROR )          { print_func(LOG_FORMAT(E, format), (uint32_t)esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_WARN )      { print_func(LOG_FORMAT(W, format), (uint32_t)esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_DEBUG )     { print_func(LOG_FORMAT(D, format), (uint32_t)esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_VERBOSE )   { print_func(LOG_FORMAT(V, format), (uint32_t)esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
+        else                                { print_func(LOG_FORMAT(I, format), (uint32_t)esp_amp_platform_get_time_ms(), tag, ##__VA_ARGS__); } \
     } while(0)
 
 #define ESP_LOG_LEVEL_LOCAL(print_func, level, tag, format, ...) do { \

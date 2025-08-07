@@ -14,8 +14,6 @@ set(srcs_common
     "${ESP_AMP_PATH}/components/esp_amp/src/rpc/esp_amp_rpc_client.c"
     "${ESP_AMP_PATH}/components/esp_amp/src/rpc/esp_amp_rpc_server.c"
 
-    "${ESP_AMP_PATH}/components/esp_amp/port/arch/riscv/esp_amp_arch.c"
-
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_print.c"
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_service.c"
     "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_panic/panic_common.c"
