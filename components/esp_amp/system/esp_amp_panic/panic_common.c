@@ -16,7 +16,7 @@
 #include "esp_rom_uart.h"
 #endif
 
-esp_amp_subcore_panic_dump_t *g_esp_amp_subcore_panic_dump = (esp_amp_subcore_panic_dump_t *)ESP_AMP_SHARED_MEM_END;
+esp_amp_subcore_panic_dump_t *g_esp_amp_subcore_panic_dump = (esp_amp_subcore_panic_dump_t *)ESP_AMP_HP_SHARED_MEM_END;
 
 #define DIM(arr) (sizeof(arr)/sizeof(*arr))
 

@@ -1,9 +1,8 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
-
 
 #include "esp_attr.h"
 
@@ -13,7 +12,6 @@
 #include "esp_amp_platform.h"
 #include "esp_amp_sys_info.h"
 #include "esp_amp_sw_intr.h"
-
 
 static void __esp_amp_rpmsg_extend_endpoint_list(esp_amp_rpmsg_ept_t** ept_head, esp_amp_rpmsg_ept_t* new_ept)
 {
@@ -35,7 +33,7 @@ static esp_amp_rpmsg_ept_t* IRAM_ATTR __esp_amp_rpmsg_search_endpoint(esp_amp_rp
     }
 
     // iterate over endpoint linked list to search for the given endpoint list
-    for (esp_amp_rpmsg_ept_t* ept_ptr = rpmsg_device->ept_list; ept_ptr != NULL; ept_ptr = ept_ptr->next_ept) {
+    for (esp_amp_rpmsg_ept_t * ept_ptr = rpmsg_device->ept_list; ept_ptr != NULL; ept_ptr = ept_ptr->next_ept) {
         if (ept_ptr->addr == ept_addr) {
             return ept_ptr;
         }
@@ -157,7 +155,7 @@ int IRAM_ATTR esp_amp_rpmsg_poll(esp_amp_rpmsg_dev_t* rpmsg_dev)
 {
     esp_amp_rpmsg_t* rpmsg;
     uint16_t rpmsg_size;
-    if (rpmsg_dev->queue_ops.q_rx(rpmsg_dev->rx_queue, (void**)(&rpmsg), &rpmsg_size) != 0) {
+    if (rpmsg_dev->queue_ops.q_rx(rpmsg_dev->rx_queue, (void * *)(&rpmsg), &rpmsg_size) != 0) {
         // nothing to receive
         return -1;
     }
@@ -213,7 +211,7 @@ int esp_amp_rpmsg_main_init_by_id(esp_amp_rpmsg_dev_t* rpmsg_dev, esp_amp_queue_
 
     size_t queue_shm_size = 2 * (sizeof(esp_amp_queue_conf_t) + sizeof(esp_amp_queue_desc_t) * aligned_queue_len + aligned_queue_item_size * aligned_queue_len);
     // alloc fixed-size buffer for TX/RX Virtqueue
-    uint8_t* vq_buffer = (uint8_t*)(esp_amp_sys_info_alloc(sysinfo_id, queue_shm_size));
+    uint8_t* vq_buffer = (uint8_t*)(esp_amp_sys_info_alloc(sysinfo_id, queue_shm_size, SYS_INFO_CAP_HP));
     if (vq_buffer == NULL) {
         // reserve memory not enough or corresponding sys_info already occupied
         return -1;
@@ -252,7 +250,7 @@ int esp_amp_rpmsg_main_init(esp_amp_rpmsg_dev_t* rpmsg_dev, uint16_t queue_len, 
 int esp_amp_rpmsg_sub_init_by_id(esp_amp_rpmsg_dev_t* rpmsg_dev, esp_amp_queue_t rpmsg_vqueue[], bool notify, bool poll, esp_amp_sys_info_id_t sysinfo_id)
 {
     uint16_t queue_shm_size;
-    uint8_t* vq_buffer = esp_amp_sys_info_get(sysinfo_id, &queue_shm_size);
+    uint8_t* vq_buffer = esp_amp_sys_info_get(sysinfo_id, &queue_shm_size, SYS_INFO_CAP_HP);
 
     if (vq_buffer == NULL) {
         return -1;

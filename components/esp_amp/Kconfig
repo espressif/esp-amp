@@ -29,24 +29,16 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
     menu "ESP-AMP Memory Management"
         depends on ESP_AMP_ENABLED
 
-        choice ESP_AMP_SHARED_MEM_LOC
-            bool "Allocate shared memory from HP RAM"
-            default ESP_AMP_SHARED_MEM_IN_HP
-            help
-                Allocating shared memory from HP RAM is the only supported option.
-
-            config ESP_AMP_SHARED_MEM_IN_HP
-                bool "ESP AMP shared memory in HP RAM"
-        endchoice
-
-        config ESP_AMP_SHARED_MEM_SIZE
-            int "Size of shared memory accessible by maincore and subcore"
+        config ESP_AMP_HP_SHARED_MEM_SIZE
+            int "Size of shared memory (from HP RAM) accessible by maincore and subcore"
             default 16384 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
             default 16384 if IDF_TARGET_ESP32P4
             range 1024 20480 if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C5
             range 1024 65536 if IDF_TARGET_ESP32P4
             help
-                Configure the size of shared memory accessible by maincore and subcore.
+                Configure the size of shared memory (from HP RAM) accessible by maincore
+                and subcore.
+
                 ESP-AMP components internally allocate buffer from this shared memory,
                 such as virtqueue buffers, event and software interrupt bits. Make sure
                 the size is large enough. Application can also allocate buffer from this

@@ -1,5 +1,5 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -12,7 +12,6 @@
 #include "esp_amp_sw_intr.h"
 #include "esp_amp_platform.h"
 #include "esp_amp_utils_priv.h"
-
 
 int IRAM_ATTR esp_amp_queue_send_try(esp_amp_queue_t *queue, void* data, uint16_t size)
 {
@@ -91,7 +90,6 @@ int IRAM_ATTR esp_amp_queue_recv_try(esp_amp_queue_t *queue, void** buffer, uint
 
     return ESP_OK;
 }
-
 
 int IRAM_ATTR esp_amp_queue_alloc_try(esp_amp_queue_t *queue, void** buffer, uint16_t size)
 {
@@ -218,7 +216,7 @@ int esp_amp_queue_main_init(esp_amp_queue_t* queue, uint16_t queue_len, uint16_t
 
     size_t queue_shm_size = sizeof(esp_amp_queue_conf_t) + sizeof(esp_amp_queue_desc_t) * aligned_queue_len + aligned_queue_item_size * aligned_queue_len;
 
-    uint8_t* vq_buffer = (uint8_t*)(esp_amp_sys_info_alloc(sysinfo_id, queue_shm_size));
+    uint8_t* vq_buffer = (uint8_t*)(esp_amp_sys_info_alloc(sysinfo_id, queue_shm_size, SYS_INFO_CAP_HP));
     if (vq_buffer == NULL) {
         // reserve memory not enough or corresponding sys_info already occupied
         return ESP_ERR_NO_MEM;
@@ -240,7 +238,7 @@ int esp_amp_queue_main_init(esp_amp_queue_t* queue, uint16_t queue_len, uint16_t
 int esp_amp_queue_sub_init(esp_amp_queue_t* queue, esp_amp_queue_cb_t cb_func, void* priv_data, bool is_master, esp_amp_sys_info_id_t sysinfo_id)
 {
     uint16_t queue_shm_size;
-    uint8_t* vq_buffer = esp_amp_sys_info_get(sysinfo_id, &queue_shm_size);
+    uint8_t* vq_buffer = esp_amp_sys_info_get(sysinfo_id, &queue_shm_size, SYS_INFO_CAP_HP);
 
     if (vq_buffer == NULL) {
         return ESP_ERR_NOT_FOUND;

@@ -1,5 +1,5 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -78,7 +78,7 @@ static IRAM_ATTR int os_env_event_isr(void *args)
 uint32_t IRAM_ATTR esp_amp_event_notify_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 {
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = (atomic_int *)esp_amp_sys_info_get(sysinfo_id, &event_bits_size);
+    atomic_int *event_bits = (atomic_int *)esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     uint32_t ret_val = atomic_fetch_or_explicit(event_bits, bit_mask, memory_order_seq_cst);
@@ -134,7 +134,7 @@ int esp_amp_event_bind_handle(uint16_t sysinfo_id, void *event_handle)
     }
 
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size);
+    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     int idx_dup = ESP_AMP_EVENT_TABLE_LEN;
@@ -200,7 +200,7 @@ void esp_amp_event_table_dump(void)
 #if IS_MAIN_CORE
 int esp_amp_event_create(uint16_t sysinfo_id)
 {
-    atomic_int *event_bits = esp_amp_sys_info_alloc(sysinfo_id, sizeof(atomic_int));
+    atomic_int *event_bits = esp_amp_sys_info_alloc(sysinfo_id, sizeof(atomic_int), SYS_INFO_CAP_HP);
     if (event_bits == NULL) {
         return -1;
     }

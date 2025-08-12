@@ -1,5 +1,5 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -30,7 +30,7 @@ typedef struct {
 uint32_t esp_amp_event_notify_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 {
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = (atomic_int *)esp_amp_sys_info_get(sysinfo_id, &event_bits_size);
+    atomic_int *event_bits = (atomic_int *)esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     uint32_t ret_val = atomic_fetch_or_explicit(event_bits, bit_mask, memory_order_seq_cst);
@@ -39,7 +39,8 @@ uint32_t esp_amp_event_notify_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
     return ret_val;
 }
 
-uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool clear_on_exit, bool wait_for_all, uint32_t timeout_ms)
+uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool clear_on_exit, bool wait_for_all,
+                                  uint32_t timeout_ms)
 {
     int ret = 0;
     uint32_t cur_time = esp_amp_platform_get_time_ms();
@@ -50,7 +51,7 @@ uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool c
     }
 
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size);
+    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     if (wait_for_all) { /* wait for all */
@@ -99,7 +100,7 @@ uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool c
 uint32_t esp_amp_event_clear_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 {
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size);
+    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     int expected = 0;
@@ -113,8 +114,10 @@ uint32_t esp_amp_event_clear_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 int esp_amp_event_init(void)
 {
     /* get event bit */
-    atomic_int * main_core_event_bits = (atomic_int *) esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_MAIN, NULL);
-    atomic_int * sub_core_event_bits = (atomic_int *) esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_SUB, NULL);
+    atomic_int *main_core_event_bits =
+        (atomic_int *)esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_MAIN, NULL, SYS_INFO_CAP_HP);
+    atomic_int *sub_core_event_bits =
+        (atomic_int *)esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_SUB, NULL, SYS_INFO_CAP_HP);
 
     if (main_core_event_bits == NULL || sub_core_event_bits == NULL) {
         ESP_AMP_LOGE(TAG, "Failed to init default event");

@@ -38,7 +38,7 @@ static void subcore_test_panic_subcore_init(void)
 {
     esp_amp_init();
 
-    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_alloc(SYS_INFO_ID_TEST_BITS, sizeof(uint32_t));
+    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_alloc(SYS_INFO_ID_TEST_BITS, sizeof(uint32_t), SYS_INFO_CAP_HP);
     atomic_init(test_bits, g_test_id_value);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_amp_load_sub(subcore_test_panic_bin_start));

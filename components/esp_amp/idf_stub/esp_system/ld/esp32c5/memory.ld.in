@@ -2,26 +2,15 @@
 #include "ld.common"
 #include "esp_amp_mem_priv.h"
 
-#if CONFIG_ESP_ROM_HAS_LP_ROM
-/* With LP-ROM memory layout is different due to LP ROM stack/data */
-#define ULP_MEM_START_ADDRESS SOC_RTC_DRAM_LOW + RESERVE_RTC_MEM
-#else
-#define ULP_MEM_START_ADDRESS (SOC_RTC_DRAM_LOW)
-#endif
-
-/* Ensure the end where the shared memory starts is aligned to 8 bytes
-   if updating this also update the same in ulp_lp_core_memory_shared.c
- */
-#define ALIGNED_COPROC_MEM ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)
-
 MEMORY
 {
-  app_desc(RW) :       ORIGIN = 0x42000020 , LENGTH = 0x100
+  app_desc(RW) :           ORIGIN = 0x42000020 , LENGTH = 0x100
   /*first 128byte for exception/interrupt vectors*/
-  vector_table(RX) :   ORIGIN = ULP_MEM_START_ADDRESS , LENGTH = 0x80
-  rtc_ram(RWX) :       ORIGIN = ULP_MEM_START_ADDRESS + 0x80, LENGTH = ALIGNED_COPROC_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
-  ulp_shared_mem(RW) : ORIGIN = ULP_MEM_START_ADDRESS + ALIGNED_COPROC_MEM - CONFIG_ULP_SHARED_MEM, LENGTH = CONFIG_ULP_SHARED_MEM
+  vector_table(RX) :       ORIGIN = RTC_MEM_START , LENGTH = 0x80
+  rtc_ram(RWX) :           ORIGIN = RTC_MEM_START + 0x80, LENGTH = RTC_MEM_SIZE - 0x80 - CONFIG_ULP_SHARED_MEM - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE
+  ulp_shared_mem(RW) :     ORIGIN = RTC_MEM_START + RTC_MEM_SIZE - CONFIG_ULP_SHARED_MEM - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE, LENGTH = CONFIG_ULP_SHARED_MEM
+  rtc_sys_info(RW) :       ORIGIN = RTC_MEM_START + RTC_MEM_SIZE - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE, LENGTH = ESP_AMP_RTC_SHARED_MEM_POOL_SIZE
 #if !CONFIG_ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
-  hp_ram(RWX) :        ORIGIN = SUBCORE_USE_HP_MEM_START, LENGTH = SUBCORE_USE_HP_MEM_SIZE
+  hp_ram(RWX) :            ORIGIN = SUBCORE_USE_HP_MEM_START, LENGTH = SUBCORE_USE_HP_MEM_SIZE
 #endif
 }

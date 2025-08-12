@@ -132,7 +132,7 @@ esp_err_t esp_amp_load_sub(const void *sub_bin)
     memcpy(&sub_img_data.image, sub_bin_byte_ptr, sizeof(esp_image_header_t));
 
 #if CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE
-    hal_memset(ulp_base_address, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    hal_memset(ulp_base_address, 0, CONFIG_ULP_COPROC_RESERVE_MEM - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE);
     if (sub_img_data.image.entry_addr != ULP_RESET_HANDLER_ADDR) {
         ESP_AMP_LOGE(TAG, "Invalid entry address");
         ret = ESP_FAIL;

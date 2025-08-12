@@ -1,8 +1,8 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -17,9 +17,15 @@ typedef enum {
     SYS_INFO_RESERVED_ID_EVENT_MAIN, /* reserved for main core event */
     SYS_INFO_RESERVED_ID_EVENT_SUB,  /* reserved for sub core event */
     SYS_INFO_RESERVED_ID_VQUEUE,     /* store shared queue (packed virt queue) data structure and buffer */
-    SYS_INFO_RESERVED_ID_SYSTEM, /* reserved for system service */
-    SYS_INFO_ID_MAX = 0xffff, /* max number of sys info */
+    SYS_INFO_RESERVED_ID_SYSTEM,     /* reserved for system service */
+    SYS_INFO_RESERVED_ID_LSCTRL,     /* reserved for light sleep control */
+    SYS_INFO_ID_MAX = 0xffff,        /* max number of sys info */
 } esp_amp_sys_info_id_t;
+
+typedef enum {
+    SYS_INFO_CAP_HP = 0,
+    SYS_INFO_CAP_RTC = 1,
+} esp_amp_sys_info_cap_t;
 
 /**
  * @brief Allocate sys info
@@ -32,7 +38,7 @@ typedef enum {
  * @retval NULL failed to alloc sys info
  * @retval pointer to allocated shared memory region for sys info data
  */
-void *esp_amp_sys_info_alloc(uint16_t info_id, uint16_t size);
+void *esp_amp_sys_info_alloc(uint16_t info_id, uint16_t size, esp_amp_sys_info_cap_t cap);
 
 /**
  * @brief Get sys info
@@ -45,7 +51,7 @@ void *esp_amp_sys_info_alloc(uint16_t info_id, uint16_t size);
  * @retval NULL failed to get sys info
  * @retval pointer to allocated shared memory region for sys info data
  */
-void *esp_amp_sys_info_get(uint16_t info_id, uint16_t *size);
+void *esp_amp_sys_info_get(uint16_t info_id, uint16_t *size, esp_amp_sys_info_cap_t cap);
 
 /**
  * Init sys info manager

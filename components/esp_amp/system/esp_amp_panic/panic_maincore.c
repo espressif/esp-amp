@@ -23,7 +23,7 @@
 #include "esp_amp_service.h"
 #include "esp_amp_platform.h"
 
-#define PANIC_DUMP_START_ADDR ESP_AMP_SHARED_MEM_END
+#define PANIC_DUMP_START_ADDR ESP_AMP_HP_SHARED_MEM_END
 #define PANIC_DUMP_MAX_LEN   0x1000
 #define PANIC_DUMP_END_ADDR (PANIC_DUMP_START_ADDR + PANIC_DUMP_MAX_LEN)
 
