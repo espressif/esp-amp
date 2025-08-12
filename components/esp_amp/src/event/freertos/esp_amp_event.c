@@ -34,7 +34,7 @@ typedef struct {
     uint16_t sysinfo_id;
     uint16_t direction; /* not used for now */
     void *event_handle;
-    atomic_int *event_bits;
+    atomic_uint *event_bits;
 } esp_amp_event_t;
 
 /**
@@ -65,8 +65,10 @@ static IRAM_ATTR int os_env_event_isr(void *args)
         uint32_t unprocessed = 0;
         BaseType_t task_yield = 0;
 
-        while (!atomic_compare_exchange_weak(event_table[i].event_bits, &unprocessed, 0));
-        ESP_AMP_DRAM_LOGD(TAG, "got event: sysinfo=%04x, unprocessed=%p", event_table[i].sysinfo_id, (void *)unprocessed);
+        while (!atomic_compare_exchange_weak(event_table[i].event_bits, &unprocessed, 0))
+            ;
+        ESP_AMP_DRAM_LOGD(TAG, "got event: sysinfo=%04x, unprocessed=%p", event_table[i].sysinfo_id,
+                          (void *)unprocessed);
         xEventGroupSetBitsFromISR(event_table[i].event_handle, unprocessed, &task_yield);
         need_yield |= task_yield;
     }
@@ -88,7 +90,8 @@ uint32_t IRAM_ATTR esp_amp_event_notify_by_id(uint16_t sysinfo_id, uint32_t bit_
     return ret_val;
 }
 
-uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool clear_on_exit, bool wait_for_all, uint32_t timeout)
+uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool clear_on_exit, bool wait_for_all,
+                                  uint32_t timeout)
 {
     EventGroupHandle_t event_handle = NULL;
     portENTER_CRITICAL(&event_lock);
@@ -134,8 +137,8 @@ int esp_amp_event_bind_handle(uint16_t sysinfo_id, void *event_handle)
     }
 
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
-    assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
+    atomic_uint *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
+    assert(event_bits != NULL && event_bits_size == sizeof(atomic_uint));
 
     int idx_dup = ESP_AMP_EVENT_TABLE_LEN;
     int idx_free = ESP_AMP_EVENT_TABLE_LEN;
@@ -165,7 +168,8 @@ int esp_amp_event_bind_handle(uint16_t sysinfo_id, void *event_handle)
 
     /* set bits once bound to avoid missing event*/
     uint32_t unprocessed = atomic_load(event_bits);
-    while (!atomic_compare_exchange_weak(event_bits, &unprocessed, 0));
+    while (!atomic_compare_exchange_weak(event_bits, &unprocessed, 0))
+        ;
     xEventGroupSetBits(event_handle, unprocessed);
     ESP_AMP_LOGD(TAG, "event_bits(%04x) bind value %p", sysinfo_id, (void *)unprocessed);
     return 0;
@@ -216,10 +220,12 @@ int esp_amp_event_init(void)
     assert(esp_amp_event_create(SYS_INFO_RESERVED_ID_EVENT_SUB) == 0);
 #else
     uint16_t event_bits_size = 0;
-    atomic_int *main_core_event_bits = (atomic_int *) esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_MAIN, &event_bits_size);
-    assert(main_core_event_bits != NULL && event_bits_size == sizeof(atomic_int));
-    atomic_int *sub_core_event_bits = (atomic_int *) esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_SUB, &event_bits_size);
-    assert(sub_core_event_bits != NULL && event_bits_size == sizeof(atomic_int));
+    atomic_uint *main_core_event_bits =
+        (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_MAIN, &event_bits_size);
+    assert(main_core_event_bits != NULL && event_bits_size == sizeof(atomic_uint));
+    atomic_uint *sub_core_event_bits =
+        (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_RESERVED_ID_EVENT_SUB, &event_bits_size);
+    assert(sub_core_event_bits != NULL && event_bits_size == sizeof(atomic_uint));
 #endif /* IS_MAIN_CORE */
 
     /* init event group table */

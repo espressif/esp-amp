@@ -1,16 +1,17 @@
 /*
  * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-#include "stddef.h"
-#include "esp_attr.h"
+#include <stddef.h>
+
 #include "esp_amp_sys_info.h"
 #include "esp_amp_sw_intr.h"
 #include "esp_amp_platform.h"
 #include "esp_amp_event.h"
 #include "esp_amp_log.h"
+#include "esp_amp_pm.h"
 
 #ifdef __cplusplus
 #include <atomic>
@@ -29,13 +30,19 @@ typedef struct {
 
 uint32_t esp_amp_event_notify_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 {
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     uint16_t event_bits_size = 0;
     atomic_int *event_bits = (atomic_int *)esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
 
     uint32_t ret_val = atomic_fetch_or_explicit(event_bits, bit_mask, memory_order_seq_cst);
     ESP_AMP_LOGD(TAG, "notify event(%p) %p", event_bits, (void *)bit_mask);
+
     esp_amp_sw_intr_trigger(SW_INTR_RESERVED_ID_EVENT);
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
+
     return ret_val;
 }
 
@@ -50,9 +57,11 @@ uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool c
         desired = expected; /* clear all expected event bit */
     }
 
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     uint16_t event_bits_size = 0;
-    atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
-    assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
+    atomic_uint *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
+    assert(event_bits != NULL && event_bits_size == sizeof(atomic_uint));
 
     if (wait_for_all) { /* wait for all */
         while (!atomic_compare_exchange_weak(event_bits, &expected, desired)) {
@@ -94,11 +103,16 @@ uint32_t esp_amp_event_wait_by_id(uint16_t sysinfo_id, uint32_t bit_mask, bool c
             }
         } while ((ret & bit_mask) == 0);
     }
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
+
     return ret;
 }
 
 uint32_t esp_amp_event_clear_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
 {
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     uint16_t event_bits_size = 0;
     atomic_int *event_bits = esp_amp_sys_info_get(sysinfo_id, &event_bits_size, SYS_INFO_CAP_HP);
     assert(event_bits != NULL && event_bits_size == sizeof(atomic_int));
@@ -108,6 +122,9 @@ uint32_t esp_amp_event_clear_by_id(uint16_t sysinfo_id, uint32_t bit_mask)
     while (!atomic_compare_exchange_weak(event_bits, &expected, desired)) {
         desired = expected & (~bit_mask);
     }
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
+
     return expected;
 }
 
@@ -123,5 +140,6 @@ int esp_amp_event_init(void)
         ESP_AMP_LOGE(TAG, "Failed to init default event");
         return -1;
     }
+
     return 0;
 }

@@ -18,7 +18,7 @@ typedef enum {
     SYS_INFO_RESERVED_ID_EVENT_SUB,  /* reserved for sub core event */
     SYS_INFO_RESERVED_ID_VQUEUE,     /* store shared queue (packed virt queue) data structure and buffer */
     SYS_INFO_RESERVED_ID_SYSTEM,     /* reserved for system service */
-    SYS_INFO_RESERVED_ID_LSCTRL,     /* reserved for light sleep control */
+    SYS_INFO_RESERVED_ID_PM,         /* reserved for esp_amp_pm */
     SYS_INFO_ID_MAX = 0xffff,        /* max number of sys info */
 } esp_amp_sys_info_id_t;
 

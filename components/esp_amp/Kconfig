@@ -39,10 +39,10 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
                 Configure the size of shared memory (from HP RAM) accessible by maincore
                 and subcore.
 
-                ESP-AMP components internally allocate buffer from this shared memory,
-                such as virtqueue buffers, event and software interrupt bits. Make sure
-                the size is large enough. Application can also allocate buffer from this
-                shared memory using SysInfo API.
+                ESP-AMP components reserve buffers from HP shared memory for internal
+                use, such as virtqueue buffers, and event. Make sure the size is large
+                enough. Insufficient size will cause ESP-AMP initialization to fail.
+                User app can also allocate memory from this region using SysInfo API.
 
         config ESP_AMP_RTC_SHARED_MEM_SIZE
             int "Size of shared memory (from RTC RAM) accessible by maincore and subcore"
@@ -51,25 +51,24 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
             range 2 1024
             help
                 Configure the size of shared memory (from RTC RAM) accessible by maincore
-                and subcore. Different from HP RAM, RTC RAM is accessible during light
-                sleep.
+                and subcore.
 
-                ESP-AMP components internally allocate buffer from this shared memory,
-                such as virtqueue buffers, event and software interrupt bits. Make sure
-                the size is large enough. Application can also allocate buffer from this
-                shared memory using SysInfo API.
+                When automatic light sleep is enabled, RTC RAM remains accessible by subcore
+                during light sleep. ESP-AMP components rely on RTC shared memory to work
+                properly during light sleep. Virtqueue flags and software interrupt bits are
+                reserved from this region. Insufficient size will cause ESP-AMP initialization
+                to fail. User app can also allocate memory from this region using SysInfo API,
+                but atomic operations are not supported on RTC RAM.
 
         config ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
             bool "Pure RTC RAM app"
             depends on ESP_AMP_SUBCORE_TYPE_LP_CORE
             default n
             help
-                Use this if your subcore app is small enough and needs to run entirely
-                from RTC memory (RTC memory is not affected by maincore light sleep).
-
-                This option is a escape hatch for those who don't want to configure
-                linker fragments with their light sleep enabled setup. Please refer
-                to doc/light_sleep.md for more details.
+                If selected, subcore firmware will be entirely loaded into RTC RAM. Useful
+                when automatic light sleep is enabled, as memory placement via linker
+                script generation is not required. Please refer to docs/light_sleep.md for
+                more details.
 
         config ESP_AMP_SUBCORE_USE_HP_MEM_SIZE
             int "Maximum size of HP RAM to load subcore firmware"
@@ -189,5 +188,12 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
             help
                 Route subcore print to maincore console via subcore supplicant. This can solve
                 the interleaved print problem that writing to UART0 directly may suffer from.
+
+        config ESP_AMP_SYSTEM_AUTO_LIGHT_SLEEP_SUPPORT_ENABLE
+            bool "Enable auto light sleep support"
+            depends on ESP_AMP_SUBCORE_TYPE_LP_CORE && PM_ENABLE
+            default "n"
+            help
+                Enable this option to support auto light sleep. 
     endmenu
 endmenu

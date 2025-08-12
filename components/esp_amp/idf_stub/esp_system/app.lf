@@ -35,66 +35,81 @@ entries:
 
 if ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP = y:
     [mapping:catch_all]
-    archive: *
-    entries:
-        * (rtc)
-elif ESP_AMP_SUBCORE_TYPE_LP_CORE = y:
+        archive: *
+        entries:
+            * (rtc)
+elif ESP_AMP_SUBCORE_TYPE_LP_CORE = y && ESP_AMP_SYSTEM_AUTO_LIGHT_SLEEP_SUPPORT_ENABLE = y:
     [mapping:esp_amp]
-    archive: libesp_amp.a
-    entries:
-        * (rtc)
+        archive: libesp_amp.a
+        entries:
+            * (rtc)
 
     [mapping:_ulp]
-    archive: libulp.a
-    entries:
-        * (rtc)
+        archive: libulp.a
+        entries:
+            * (rtc)
 
     [mapping:_riscv]
-    archive: libriscv.a
-    entries:
-        * (rtc)
+        archive: libriscv.a
+        entries:
+            * (rtc)
 
     [mapping:_hal]
-    archive: libhal.a
-    entries:
-        * (rtc)
+        archive: libhal.a
+        entries:
+            * (rtc)
 
     [mapping:_soc]
-    archive: libsoc.a
-    entries:
-        * (rtc)
+        archive: libsoc.a
+        entries:
+            * (rtc)
 
     [mapping:_esp_system]
-    archive: libesp_system.a
-    entries:
-        * (rtc)
+        archive: libesp_system.a
+        entries:
+            * (rtc)
 
     [mapping:_esp_hw_support]
-    archive: libesp_hw_support.a
-    entries:
-        * (rtc)
+        archive: libesp_hw_support.a
+        entries:
+            * (rtc)
 
     [mapping:_esp_common]
-    archive: libesp_common.a
-    entries:
-        * (rtc)
+        archive: libesp_common.a
+        entries:
+            * (rtc)
+
+    [mapping:_c_nano]
+        archive: libc_nano.a
+        entries:
+            * (rtc)
+
+    [mapping:_m_nano]
+        archive: libm_nano.a
+        entries:
+            * (rtc)
+
+    [mapping:_gcc]
+        archive: libgcc.a
+        entries:
+            * (rtc)
 
     [mapping:_g_nano]
-    archive: libg_nano.a
-    entries:
-        * (rtc)
+        archive: libg_nano.a
+        entries:
+            * (rtc)
 
     [mapping:_nosys]
-    archive: libnosys.a
-    entries:
-        * (rtc)
+        archive: libnosys.a
+        entries:
+            * (rtc)
 
     [mapping:catch_all]
-    archive: *
-    entries:
-        * (default)
+        archive: *
+        entries:
+            * (default)
 else:
     [mapping:catch_all]
-    archive: *
-    entries:
-        * (default)
+        archive: *
+        entries:
+            * (default)

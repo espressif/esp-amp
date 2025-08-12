@@ -1,8 +1,8 @@
 /*
-* SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_amp_log.h"
 #include "esp_amp_platform.h"
@@ -10,7 +10,7 @@
 #include "esp_amp_sw_intr.h"
 #include "esp_amp_sw_intr_priv.h"
 #include "esp_amp_env.h"
-#include "esp_amp_platform.h"
+#include "esp_amp_pm.h"
 
 #if !IS_ENV_BM
 #include "freertos/FreeRTOS.h"
@@ -70,12 +70,16 @@ void esp_amp_sw_intr_trigger(esp_amp_sw_intr_id_t intr_id)
     /* must be initialized */
     assert(s_sw_intr_st != NULL);
 
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
 #if IS_MAIN_CORE
     atomic_fetch_or(&(s_sw_intr_st->sub_core_sw_intr_st), BIT(intr_id));
 #else
     atomic_fetch_or(&(s_sw_intr_st->main_core_sw_intr_st), BIT(intr_id));
 #endif
     esp_amp_platform_sw_intr_trigger();
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
 }
 
 void esp_amp_sw_intr_handler_dump(void)
@@ -118,12 +122,16 @@ void esp_amp_sw_intr_handler(void)
 #endif
     int unprocessed = 0;
 
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
 #if IS_MAIN_CORE
     ESP_AMP_DRAM_LOGD(TAG, "Received software interrupt from subcore\n");
-    while (!atomic_compare_exchange_weak(&s_sw_intr_st->main_core_sw_intr_st, &unprocessed, 0));
+    while (!atomic_compare_exchange_weak(&s_sw_intr_st->main_core_sw_intr_st, &unprocessed, 0))
+        ;
 #else
     ESP_AMP_DRAM_LOGD(TAG, "Received software interrupt from maincore\n");
-    while (!atomic_compare_exchange_weak(&s_sw_intr_st->sub_core_sw_intr_st, &unprocessed, 0));
+    while (!atomic_compare_exchange_weak(&s_sw_intr_st->sub_core_sw_intr_st, &unprocessed, 0))
+        ;
 #endif
     ESP_AMP_DRAM_LOGD(TAG, "sw_intr_st at %p, unprocessed=0x%x\n", s_sw_intr_st, (unsigned)unprocessed);
 
@@ -144,11 +152,15 @@ void esp_amp_sw_intr_handler(void)
         /* clear all interrupt bit */
         unprocessed = 0;
 #if IS_MAIN_CORE
-        while (!atomic_compare_exchange_weak(&s_sw_intr_st->main_core_sw_intr_st, &unprocessed, 0));
+        while (!atomic_compare_exchange_weak(&s_sw_intr_st->main_core_sw_intr_st, &unprocessed, 0))
+            ;
 #else
-        while (!atomic_compare_exchange_weak(&s_sw_intr_st->sub_core_sw_intr_st, &unprocessed, 0));
+        while (!atomic_compare_exchange_weak(&s_sw_intr_st->sub_core_sw_intr_st, &unprocessed, 0))
+            ;
 #endif
     }
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
 
 #if !IS_ENV_BM
     portYIELD_FROM_ISR(need_yield);

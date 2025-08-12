@@ -11,6 +11,7 @@
 #include "esp_amp_sw_intr.h"
 #include "esp_amp_panic.h"
 #include "esp_amp_panic_priv.h"
+#include "esp_amp_pm.h"
 
 #define ASSERT_STR "assert failed on subcore: "
 #define INST_LEN 4
@@ -72,6 +73,8 @@ __attribute__((alias("subcore_panic_dump")));
 
 void subcore_panic_dump(RvExcFrame *frame, int exccause)
 {
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     /* dump registers */
     char *reg_dump = (char *)g_esp_amp_subcore_panic_dump->register_dump;
     memcpy(reg_dump, (void *)frame, sizeof(RvExcFrame));
@@ -105,6 +108,8 @@ void subcore_panic_dump(RvExcFrame *frame, int exccause)
 #else
     subcore_panic_print();
 #endif
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
 
     while (1);
 }
@@ -142,6 +147,8 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
 
     const char *str[] = {"assert failed on subcore: ", func ? func : "\b", " ", file, ":", lbuf, " (", expr, ")"};
 
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     for (int i = 0; i < sizeof(str) / sizeof(str[0]); i++) {
         uint32_t len = strlen(str[i]);
         uint32_t cpy_len = MIN(len, rem_len);
@@ -156,6 +163,8 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
     g_esp_amp_subcore_panic_dump->abort_details[off] = '\0';
 #endif
     g_esp_amp_subcore_panic_dump->is_abort = true;
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
 
     /* trigger exception */
     asm("unimp");
@@ -178,6 +187,8 @@ void __attribute__((noreturn)) esp_amp_subcore_abort(void)
     itohs((uint32_t)(__builtin_return_address(0) - 4), addr_buf);
     const char *str[] = { ERR_STR1, addr_buf, ERR_STR2 };
 
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_ENTER();
+
     for (int i = 0; i < sizeof(str) / sizeof(str[0]); i++) {
         uint32_t len = strlen(str[i]);
         uint32_t cpy_len = MIN(len, rem_len);
@@ -190,6 +201,8 @@ void __attribute__((noreturn)) esp_amp_subcore_abort(void)
     }
     g_esp_amp_subcore_panic_dump->abort_details[off] = '\0';
     g_esp_amp_subcore_panic_dump->is_abort = true;
+
+    ESP_AMP_PM_SKIP_LIGHT_SLEEP_EXIT();
 
     /* trigger exception */
     asm("unimp");

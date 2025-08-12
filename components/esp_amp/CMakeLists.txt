@@ -54,10 +54,17 @@ if(BOOTLOADER_BUILD)
         )
     endif()
 
+    if(CONFIG_ESP_AMP_SYSTEM_AUTO_LIGHT_SLEEP_SUPPORT_ENABLE)
+        list(APPEND srcs
+            "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_pm.c"
+        )
+    endif()
+
+
     list(APPEND reqs soc hal esp_app_format)
 
     if(IDF_TARGET STREQUAL "esp32c6" OR IDF_TARGET STREQUAL "esp32c5")
-        list(APPEND reqs ulp)
+        list(APPEND reqs ulp esp_pm)
     endif()
 
     idf_component_register(
@@ -92,12 +99,18 @@ else()
                 "${ESP_AMP_PATH}/components/esp_amp/port/platform/sw_intr/intmtx/esp_amp_platform_sw_intr.c"
             )
         endif()
+
+        if(CONFIG_ESP_AMP_SYSTEM_AUTO_LIGHT_SLEEP_SUPPORT_ENABLE)
+            list(APPEND srcs
+                "${ESP_AMP_PATH}/components/esp_amp/system/esp_amp_pm.c"
+            )
+        endif()
     endif()
 
     list(APPEND reqs bootloader_support esp_partition spi_flash esp_app_format)
 
     if(IDF_TARGET STREQUAL "esp32c6" OR IDF_TARGET STREQUAL "esp32c5")
-        list(APPEND reqs ulp)
+        list(APPEND reqs ulp esp_pm)
     endif()
 
     idf_component_register(SRCS ${srcs}

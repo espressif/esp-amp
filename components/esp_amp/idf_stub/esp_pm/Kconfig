@@ -1,0 +1,13 @@
+menu "Power Management"
+    config PM_ENABLE
+        bool "Support for power management"
+        # SMP FreeRTOS currently does not support power management IDF-4997
+        depends on (!FREERTOS_SMP && SOC_PM_SUPPORTED) || __DOXYGEN__
+        default n
+        help
+            If enabled, application is compiled with support for power management.
+            This option has run-time overhead (increased interrupt latency,
+            longer time to enter idle state), and it also reduces accuracy of
+            RTOS ticks and timers used for timekeeping.
+            Enable this option if application uses power management APIs.
+endmenu # "Power Management"

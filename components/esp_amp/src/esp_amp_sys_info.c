@@ -13,7 +13,6 @@
 #include "esp_amp_sys_info.h"
 #include "esp_amp_log.h"
 #include "esp_amp_mem_priv.h"
-#include "esp_amp_system.h"
 
 #define TAG "sys_info"
 
@@ -64,7 +63,8 @@ void *IRAM_ATTR esp_amp_sys_info_get(uint16_t info_id, uint16_t *size, esp_amp_s
             }
 
             buffer = (void *)((uint8_t *)(sys_info_entry) + sizeof(sys_info_header_t));
-            ESP_AMP_LOGI(TAG, "get info:%x, size:0x%x, addr:%p", sys_info_entry->info_id, sys_info_entry->size, buffer);
+            ESP_AMP_LOGD(TAG, "get id: %x, size: 0x%x, addr: %p", sys_info_entry->info_id, sys_info_entry->size,
+                         buffer);
             goto exit;
         }
 
@@ -114,7 +114,7 @@ void *esp_amp_sys_info_alloc(uint16_t info_id, uint16_t size, esp_amp_sys_info_c
         return NULL;
     }
 
-    ESP_AMP_LOGI(TAG, "alloc info:%x, size:0x%x, addr:%p", info_id, size, buffer);
+    ESP_AMP_LOGD(TAG, "alloc id: %x, size: 0x%x, addr: %p", info_id, size, buffer);
 
     sys_info_entry->next = next_sys_info_entry_start;
     sys_info_entry->next->next = NULL;
@@ -138,11 +138,13 @@ int esp_amp_sys_info_init(void)
     s_esp_amp_sys_info_rtc->next = NULL;
 #endif /* CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE */
 #endif /* IS_MAIN_CORE */
-    ESP_AMP_LOGI(TAG, "ESP-AMP shared memory (HP RAM): addr=%p, len=%p", s_esp_amp_sys_info_hp,
-                 (void *)ESP_AMP_HP_SHARED_MEM_POOL_SIZE);
+    ESP_AMP_LOGI(TAG, "ESP-AMP shared memory (HP RAM): addr=%p, len=%x", s_esp_amp_sys_info_hp,
+                 ESP_AMP_HP_SHARED_MEM_POOL_SIZE);
+#if CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE
+    ESP_AMP_LOGI(TAG, "ESP-AMP shared memory (RTC RAM): addr=%p, len=%x", s_esp_amp_sys_info_rtc,
+                 ESP_AMP_RTC_SHARED_MEM_POOL_SIZE);
+#endif /* CONFIG_ESP_AMP_SUBCORE_TYPE_LP_CORE */
     return 0;
-    ESP_AMP_LOGI(TAG, "ESP-AMP shared memory (RTC RAM): addr=%p, len=%p", s_esp_amp_sys_info_rtc,
-                 (void *)ESP_AMP_RTC_SHARED_MEM_POOL_SIZE);
 }
 
 void esp_amp_sys_info_dump(void)
