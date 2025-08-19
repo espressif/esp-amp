@@ -1,27 +1,26 @@
 #!/bin/bash
-
-set -e
 set -u
 set -o pipefail
 
 # --- Script Arguments ---
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <TARGET> <IDF_VER>"
-  echo "Example: $0 esp32c6 release-v5.4"
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 <TARGET> <IDF_VER> <BUILD_DIR>"
+  echo "Example: $0 esp32c6 release-v5.4 build_idf-release-v5.4_esp32c6"
   exit 1
 fi
 
 TARGET="$1"
 IDF_VER="$2"
+BUILD_DIR="$3"
 
-echo "--- Test Script Started for Target: ${TARGET}, IDF: ${IDF_VER} ---"
+echo "--- Test Script Started for Target: ${TARGET}, IDF: ${IDF_VER}, Build Dir: ${BUILD_DIR} ---"
 
 echo "Running pytest for ${TARGET}..."
 export ESPBAUD=115200
 
 MAX_ATTEMPTS=4
-PYTEST_COMMAND="uv run pytest --target ${TARGET} --junit-xml=result_${TARGET}_${IDF_VER}.xml --build-dir=build_idf-${IDF_VER}_${TARGET}"
-XML_REPORT_FILE="result_${TARGET}_${IDF_VER}.xml"
+PYTEST_COMMAND="uv run pytest --target ${TARGET} --junit-xml=result.xml --build-dir=${BUILD_DIR}"
+XML_REPORT_FILE="result.xml"
 
 for attempt in $(seq 1 $MAX_ATTEMPTS); do
   echo "Pytest attempt ${attempt}/${MAX_ATTEMPTS} for target ${TARGET}, IDF ${IDF_VER}"
@@ -63,7 +62,7 @@ for attempt in $(seq 1 $MAX_ATTEMPTS); do
     fi
     echo "Found ${actual_test_count} test cases in ${XML_REPORT_FILE}."
 
-    if [ "${actual_test_count}" -ge "2" ]; then
+    if [ "${actual_test_count}" -gt "1" ]; then
       test_count_sufficient=true
     fi
   else
@@ -82,7 +81,7 @@ for attempt in $(seq 1 $MAX_ATTEMPTS); do
     if [ "${test_count_sufficient}" = false ]; then
       if [ -n "${failure_reason}" ]; then failure_reason+=" and "; fi
       if [ "${xml_parsable_and_exists}" = true ]; then
-        failure_reason+="insufficient test cases found (${actual_test_count} < 2), which implies that firmware flashing is probably failed."
+        failure_reason+="insufficient test cases found (${actual_test_count}), which implies that firmware flashing is probably failed."
       else
         failure_reason+="XML report missing or unreadable."
       fi
@@ -91,7 +90,7 @@ for attempt in $(seq 1 $MAX_ATTEMPTS); do
     echo "Pytest attempt ${attempt} failed: ${failure_reason}."
 
     if [ "${attempt}" -lt "${MAX_ATTEMPTS}" ] && [ "${test_count_sufficient}" = false ]; then
-      BACKOFF_SECONDS=$(((RANDOM % 15) + 15)) # e.g., 15-30 seconds backoff
+      BACKOFF_SECONDS=$(((RANDOM % 15) * (attempt) + 15)) # Increase backoff with each attempt
       echo "Retrying after a backoff of ${BACKOFF_SECONDS} seconds..."
       sleep ${BACKOFF_SECONDS}
     else

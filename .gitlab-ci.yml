@@ -1,6 +1,5 @@
 stages:
-  - build
-  - test
+  - core
   - extra
 
 workflow:
