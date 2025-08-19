@@ -35,6 +35,25 @@ static IRAM_ATTR int vq_recv_isr(void *args)
     return 0;
 }
 
+static void recv_ints_blocking(esp_amp_queue_t *queue, SemaphoreHandle_t sem, int expected, int *out_buffer)
+{
+    int received = 0;
+    int *buf = NULL;
+    uint16_t buf_size = 0;
+
+    while (received < expected) {
+        while (received < expected && (esp_amp_queue_recv_try(queue, (void **)(&buf), &buf_size) == 0)) {
+            TEST_ASSERT_EQUAL(buf_size, sizeof(int));
+            printf("maincore received %d from subcore\n", *buf);
+            out_buffer[received++] = *buf;
+            ESP_ERROR_CHECK(esp_amp_queue_free_try(queue, (void *)(buf)));
+        }
+        if (received < expected) {
+            xSemaphoreTake(sem, portMAX_DELAY);
+        }
+    }
+}
+
 TEST_CASE("test queue send and recv", "[esp_amp]")
 {
     TEST_ASSERT(esp_amp_init() == 0);
@@ -59,30 +78,16 @@ TEST_CASE("test queue send and recv", "[esp_amp]")
     vTaskDelay(pdMS_TO_TICKS(1000)); /* wait for subcore to start */
 
     int *buf = NULL;
-    uint16_t buf_size = 0;
 
     for (int i = 0; i < 8; i++) {
         /* subcore sends 2 numbers to maincore, maincore sends their sum back to subcore */
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        int a = 0;
-        ESP_ERROR_CHECK(esp_amp_queue_recv_try(vq_sc_master, (void **)(&buf), &buf_size));
-        TEST_ASSERT_EQUAL(buf_size, sizeof(int));
-        printf("maincore received %d from subcore\n", *buf);
-        a = *buf;
-        ESP_ERROR_CHECK(esp_amp_queue_free_try(vq_sc_master, (void *)(buf)));
-
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        int b = 0;
-        ESP_ERROR_CHECK(esp_amp_queue_recv_try(vq_sc_master, (void **)(&buf), &buf_size));
-        TEST_ASSERT_EQUAL(buf_size, sizeof(int));
-        printf("maincore received %d from subcore\n", *buf);
-        b = *buf;
-        ESP_ERROR_CHECK(esp_amp_queue_free_try(vq_sc_master, (void *)(buf)));
+        int a_and_b[2] = {0};
+        recv_ints_blocking(vq_sc_master, semaphore, 2, a_and_b);
 
         ESP_ERROR_CHECK(esp_amp_queue_alloc_try(vq_mc_master, (void **)(&buf), sizeof(int)));
-        *buf = a + b;
+        *buf = a_and_b[0] + a_and_b[1];
         ESP_ERROR_CHECK(esp_amp_queue_send_try(vq_mc_master, (void *)(buf), sizeof(int)));
-        printf("maincore sent %d to subcore\n", a + b);
+        printf("maincore sent %d to subcore\n", a_and_b[0] + a_and_b[1]);
 
         /* maincore sends 2 numbers to subcore, subcore sends their sum back to maincore */
         int c = rand() % 1000;
@@ -97,12 +102,9 @@ TEST_CASE("test queue send and recv", "[esp_amp]")
         ESP_ERROR_CHECK(esp_amp_queue_send_try(vq_mc_master, (void *)(buf), sizeof(int)));
         printf("maincore sent %d to subcore\n", d);
 
-        xSemaphoreTake(semaphore, portMAX_DELAY);
-        ESP_ERROR_CHECK(esp_amp_queue_recv_try(vq_sc_master, (void **)(&buf), &buf_size));
-        TEST_ASSERT_EQUAL(buf_size, sizeof(int));
-        printf("maincore received %d from subcore\n", *buf);
-        TEST_ASSERT_EQUAL(*buf, c + d);
-        ESP_ERROR_CHECK(esp_amp_queue_free_try(vq_sc_master, (void *)(buf)));
+        int sum_from_sub = 0;
+        recv_ints_blocking(vq_sc_master, semaphore, 1, &sum_from_sub);
+        TEST_ASSERT_EQUAL(sum_from_sub, c + d);
     }
 
     /*
