@@ -104,8 +104,8 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
 
     endmenu
 
-    menu "ESP-AMP Subcore Hardware FPU"
-        depends on (ESP_AMP_ENABLED && IDF_TARGET_ESP32P4)
+    menu "ESP-AMP Subcore Toolchain Settings"
+        depends on ESP_AMP_ENABLED
 
         config ESP_AMP_SUBCORE_ENABLE_HW_FPU
             bool "Enable and use hardware FPU for floating-point operations"
@@ -125,6 +125,15 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
                 Otherwise, hardware FPU is prohibited in ISR context and will trigger illegal
                 instruction exception. This feature introduces considerable overhead for all
                 ISR handlers, regardless floating-point operation is performed or not.
+
+        config ESP_AMP_SUBCORE_USE_ARITH64
+            bool "Use arith64 for 64-bit integer arithmetic"
+            default "n"
+            help
+                Enable this feature to use arith64 project instead of libgcc for 64-bit integer
+                arithmetic. This reduces subcore application code size by about 1 KB. For more
+                details on code size and performance, please refer to the arith64 project here:
+                https://github.com/glitchub/arith64.
     endmenu
 
     config ESP_AMP_EVENT_TABLE_LEN

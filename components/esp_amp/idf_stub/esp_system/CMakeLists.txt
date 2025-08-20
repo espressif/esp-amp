@@ -2,6 +2,10 @@ set(srcs
     "syscalls.c"
 )
 
+if(CONFIG_ESP_AMP_SUBCORE_USE_ARITH64)
+    list(APPEND srcs "arith64.c")
+endif()
+
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND srcs
         "port/soc/esp32p4/portasm.S"
@@ -24,3 +28,7 @@ idf_component_register(
 target_link_libraries(${COMPONENT_LIB} INTERFACE m)
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u subcore_panic_dump")
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_amp_include_syscalls_impl")
+
+if(CONFIG_ESP_AMP_SUBCORE_USE_ARITH64)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_amp_include_arith64_impl")
+endif()

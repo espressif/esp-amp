@@ -12,6 +12,9 @@
 #include "esp_amp_panic.h"
 #include "esp_amp_panic_priv.h"
 
+#define ASSERT_STR "assert failed on subcore: "
+#define INST_LEN 4
+
 /**
  * @brief Convert integer to decimal string
  * @param value Integer value to convert (0-9999)
@@ -118,6 +121,19 @@ void panicHandler(RvExcFrame *frame)
 
 void __attribute__((noreturn)) __assert_func(const char *file, int line, const char *func, const char *expr)
 {
+#if CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+    (void)file;
+    (void)line;
+    (void)func;
+    (void)expr;
+
+    char buff[sizeof(ASSERT_STR) + 11] = ASSERT_STR;
+    buff[sizeof(ASSERT_STR) - 1] = '0';
+    buff[sizeof(ASSERT_STR)] = 'x';
+    itohs((uint32_t)(__builtin_return_address(0) - INST_LEN), buff + sizeof(ASSERT_STR) + 1);
+    memcpy(g_esp_amp_subcore_panic_dump->abort_details, buff, sizeof(buff));
+    g_esp_amp_subcore_panic_dump->abort_details[sizeof(buff) - 1] = '\0';
+#else
     char lbuf[6];
     uint32_t rem_len = ESP_AMP_PANIC_ABORT_DETAILS_LENGTH - 1;
     uint32_t off = 0;
@@ -136,8 +152,9 @@ void __attribute__((noreturn)) __assert_func(const char *file, int line, const c
             break;
         }
     }
-    g_esp_amp_subcore_panic_dump->abort_details[off] = '\0';
 
+    g_esp_amp_subcore_panic_dump->abort_details[off] = '\0';
+#endif
     g_esp_amp_subcore_panic_dump->is_abort = true;
 
     /* trigger exception */
