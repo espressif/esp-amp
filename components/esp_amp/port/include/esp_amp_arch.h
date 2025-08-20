@@ -41,7 +41,50 @@ static inline void esp_amp_arch_intr_disable(void)
 #endif
 }
 
-uint64_t esp_amp_arch_get_cpu_cycle(void);
+static inline uint32_t esp_amp_arch_get_cpu_cycle(void)
+{
+#ifdef __riscv
+#if IS_MAIN_CORE
+    return rv_utils_get_cycle_count();
+#else
+    return RV_READ_CSR(mcycle);
+#endif
+#else
+#error "Unsupported architecture"
+#endif
+}
+
+/**
+ * @brief Get the CPU cycle in double word
+ *
+ * @note This function is only available on subcore
+ */
+#if !IS_MAIN_CORE
+typedef union {
+    struct {
+        uint32_t rv_mcycle;
+        uint32_t rv_mcycleh;
+    };
+    uint64_t rv_mcycle_comb;
+} esp_cpu_rv_mcycle_t;
+
+static inline uint64_t esp_amp_arch_get_cpu_cycle_64(void)
+{
+    esp_cpu_rv_mcycle_t cpu_cycle;
+    uint32_t mcycleh_snapshot;
+
+    /* double-check mcycleh: to avoid inconsistency when (mcycleh, mcycle) */
+    /* changes from (0x0, 0xffff_ffff) to (0x1, 0x0000_0000) */
+    mcycleh_snapshot = RV_READ_CSR(mcycleh);
+
+    do {
+        cpu_cycle.rv_mcycle = RV_READ_CSR(mcycle);
+        cpu_cycle.rv_mcycleh = RV_READ_CSR(mcycleh);
+    } while (mcycleh_snapshot != cpu_cycle.rv_mcycleh);
+
+    return cpu_cycle.rv_mcycle_comb;
+}
+#endif /* !IS_MAIN_CORE */
 
 #ifdef __cplusplus
 }
