@@ -90,17 +90,9 @@ idf.py build
 idf.py flash monitor
 ```
 
-## Tips for developing subcore firmware
+## Subcore Application Build Tips
 
-The following tips work for all targets:
-
-* Dynamic memory allocation is supported but not enabled by default. To enable it, set `CONFIG_ESP_AMP_SUBCORE_ENABLE_HEAP=y`. Heap size can be configured via `CONFIG_ESP_AMP_SUBCORE_HEAP_SIZE`.
-* Reserve enough stack space. Stack is allocated from RTC RAM on ESP32-C5 and ESP32-C6 and from HP RAM on ESP32-P4. Stack smashing protection mechanism is not supported on subcore. As stack grows, it may overwrite heap or `.bss` section without any warning and cause unpredictable results. Therefore, it is recommended to reserve enough stack space for subcore application. Sdkconfig option `ESP_AMP_SUBCORE_STACK_SIZE_MIN` can be used to specify the minimum stack size. If the remaining memory space is insufficient to allocate the stack, the build will fail.
-
-If you are developing subcore firmware on ESP32-C5 and ESP32-C6, please refer to the following tips:
-
-* Go beyond the limited RTC RAM: By default, subcore firmware is loaded into RTC RAM if subcore type is LP core. However, the limited size of RTC RAM (16KB on ESP32-C5 and ESP32-C6) can go short soon as LP core firmware grows. ESP-AMP allows you to load subcore firmware into HP RAM by setting Kconfig option `CONFIG_ESP_AMP_SUBCORE_USE_HP_MEM=y`. Please refer to [Memory Layout Doc](./docs/memory_layout.md) for more details.
-* Keep away from HP ROM APIs: LP core has no access to HP ROM. Therefore, ROM apis such as `esp_rom_printf`, `esp_rom_delay_us` are not supported on LP core.
+Subcore applications require specialized build configurations due to their resource-constrained environments and unique toolchain requirements. For comprehensive guidance on optimizing your subcore builds, including memory management, toolchain settings, and hardware-specific considerations, see the [Subcore Build Tips](./docs/subcore_build_tips.md) documentation.
 
 ## Known Limitations
 
@@ -125,11 +117,3 @@ It is not recommended to use RTCRAM as shared memory since atomicity cannot be g
 ### How to develop peripheral drivers for subcore?
 
 For HP peripherals, ESP-IDF hal component contains low-level drivers which provides an OS-agnostic and consistent set of APIs which can be used in any environment to manipulate HP peripheral registers among different SoCs. For LP peripherals, ESP-IDF ulp component has already implemented ready-to-use drivers. Please refer to [peripheral](./docs/peripheral.md) for more details.
-
-### Is floating-point supported on subcore?
-
-ESP32-P4 HP core supports RISC-V Single-Precision Floating-Point extension. This enables hardware FPU acceleration for floating-point arithmetic and thus provide a significant performance boost for applications that rely heavily on floating-point operations. ESP-AMP enables this feature by default when the ESP32-P4 HP core is selected as the subcore. However, this feature comes with trade-offs, particularly in terms of context switch overhead. Hardware-based floating-point operations require saving and restoring additional registers, which can increase the time needed for context switching. This overhead can impact ISR handling speed and compromise the system's real-time performance. ESP-AMP offers the flexibility to whether enable hardware FPU in ISRs or not. By default, it is disabled to achieve better real-time performance, and any attempt to execute floating-point instructions in ISR context will result in an illegal instruction exception. If you decide to enable hardware-based floating-point operations in ISRs, set `CONFIG_ESP_AMP_SUBCORE_ENABLE_HW_FPU_IN_ISR=y`.
-
-Due to the lack of hardware FPU, any floating-point operations on LP core are executed purely in software using the built-in libc provided by the compiler (in the case of ESP-AMP, this is newlib-nano). This software-based approach significantly increases code size and computational overhead. Therefore, it is strongly recommended to use integer operations exclusively when the LP core is selected as the subcore.
-
-**NOTE**: Printing floating-point numbers to the console is not supported by either HP or LP subcore.
