@@ -76,3 +76,11 @@ build (example, virtqueue):
     - .example_template
   variables:
     EXAMPLE_DIRNAME: virtqueue
+
+build (example, light_sleep):
+  extends:
+    - ._default_example_build_script
+    - .subcore_type_lp_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: light_sleep
