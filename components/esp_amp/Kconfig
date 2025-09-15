@@ -60,16 +60,6 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
                 to fail. User app can also allocate memory from this region using SysInfo API,
                 but atomic operations are not supported on RTC RAM.
 
-        config ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
-            bool "Pure RTC RAM app"
-            depends on ESP_AMP_SUBCORE_TYPE_LP_CORE
-            default n
-            help
-                If selected, subcore firmware will be entirely loaded into RTC RAM. Useful
-                when automatic light sleep is enabled, as memory placement via linker
-                script generation is not required. Please refer to docs/light_sleep.md for
-                more details.
-
         config ESP_AMP_SUBCORE_USE_HP_MEM_SIZE
             int "Maximum size of HP RAM to load subcore firmware"
             depends on !ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
@@ -141,6 +131,25 @@ menu "ESP Asymmetric Multi-Processing(AMP) Framework"
                 arithmetic. This reduces subcore application code size by about 1 KB. For more
                 details on code size and performance, please refer to the arith64 project here:
                 https://github.com/glitchub/arith64.
+
+        config ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+            bool "Pure RTC RAM app"
+            depends on ESP_AMP_SUBCORE_TYPE_LP_CORE
+            default n
+            help
+                If selected, subcore firmware will be entirely loaded into RTC RAM. Useful
+                when automatic light sleep is enabled, as memory placement via linker
+                script generation is not required. Please refer to docs/light_sleep.md for
+                more details.
+
+        config ESP_AMP_SUBCORE_LTO_ENABLE
+            bool "Enable link time optimization (LTO)"
+            depends on ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+            default n
+            help
+                Enable link time optimization (LTO) to further reduce subcore firmware size.
+                LTO is only supported when subcore app is entirely loaded into RTC RAM. Refer
+                to docs/subcore_build_tips.md for more details.
     endmenu
 
     config ESP_AMP_EVENT_TABLE_LEN

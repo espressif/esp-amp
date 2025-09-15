@@ -74,6 +74,28 @@ if(BOOTLOADER_BUILD)
         PRIV_INCLUDE_DIRS ${priv_includes}
         REQUIRES ${reqs}
     )
+
+    # lto
+    if(CONFIG_ESP_AMP_SUBCORE_LTO_ENABLE)
+        idf_build_set_property(COMPILE_OPTIONS "-flto=auto" APPEND)
+        idf_build_set_property(COMPILE_OPTIONS "-ffat-lto-objects" APPEND)
+        idf_build_set_property(COMPILE_OPTIONS "-flto-compression-level=9" APPEND)
+
+        idf_build_get_property(current_list_of_options LINK_OPTIONS)
+        set(new_list_of_options)
+        foreach(option ${current_list_of_options})
+            if(option STREQUAL "-fno-lto")
+                list(APPEND new_list_of_options "-flto")
+            else()
+                list(APPEND new_list_of_options "${option}")
+            endif()
+        endforeach()
+        idf_build_set_property(LINK_OPTIONS "${new_list_of_options}")
+        idf_build_set_property(LINK_OPTIONS "-fuse-linker-plugin" APPEND)
+        idf_build_set_property(LINK_OPTIONS "-ffat-lto-objects" APPEND)
+        idf_build_set_property(LINK_OPTIONS "-flto-partition=max" APPEND)
+    endif()
+
 else()
     if(CONFIG_ESP_AMP_ENABLED)
         list(APPEND includes ${includes_common})
