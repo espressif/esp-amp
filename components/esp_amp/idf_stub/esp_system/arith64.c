@@ -259,7 +259,3 @@ arith64_u64 __umoddi3(arith64_u64 a, arith64_u64 b)
     __divmoddi4(a, b, &r);
     return r;
 }
-
-void esp_amp_include_arith64_impl(void)
-{
-}
