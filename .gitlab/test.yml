@@ -1,50 +1,46 @@
 include: /.gitlab/template.yml
 
-test (basic):
-  extends: .test_apps_basic_template
-  stage: test
-  dependencies:
-    - build (basic)
-  tags:
-    - tester
-  image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
-
-  variables:
-    UV_VERSION: "0.7.8"
-    PYTHON_VERSION: "3.12"
-    BASE_LAYER: "bookworm-slim"
-    UV_LINK_MODE: "copy"
-    UV_CACHE_DIR: $CI_PROJECT_DIR/uv-cache
-  cache:
-    - key:
-        files:
-          - ${BASIC_TEST_PATH}/uv.lock
-      paths:
-        - ${UV_CACHE_DIR}
-      policy: pull-push
-  resource_group: ${TARGET}
-
-  before_script:
-    - echo "Verifying artifacts are present in ${BASIC_TEST_PATH}/build_idf-${IDF_VER}_${TARGET}/:"
-    - ls -lha "${BASIC_TEST_PATH}/build_idf-${IDF_VER}_${TARGET}/"
+._default_test_script:
   script:
-    - echo "Testing application for target ${TARGET} in ${BASIC_TEST_PATH} with IDF ${IDF_VER}"
-
-    - echo "Changing directory to ${BASIC_TEST_PATH}"
-    - cd ${BASIC_TEST_PATH}
-
-    - echo "Installing test dependencies..."
-    - uv sync
-
-    - echo "Running the test script..."
+    - ls -lha "build_${IDF_VER}_${TARGET}"
     - chmod +x $CI_PROJECT_DIR/.gitlab/test_with_retries.sh
-    - $CI_PROJECT_DIR/.gitlab/test_with_retries.sh ${TARGET} ${IDF_VER}
+    - $CI_PROJECT_DIR/.gitlab/test_with_retries.sh
+      "${TARGET}"
+      "${IDF_VER}"
+      "build_${IDF_VER}_${TARGET}"
 
+._default_test_artifacts:
   artifacts:
-    name: "test_apps_basic-result-${TARGET}-${IDF_VER}-${CI_COMMIT_REF_SLUG}"
+    name: "report-${TEST_DIRNAME}-${TARGET}-${IDF_VER}-${CI_COMMIT_REF_SLUG}"
     when: always
     paths:
-      - "${BASIC_TEST_PATH}/result_${TARGET}_${IDF_VER}.xml"
+      - "test_apps/${TEST_DIRNAME}/result.xml"
     reports:
-      junit: "${BASIC_TEST_PATH}/result_${TARGET}_${IDF_VER}.xml"
+      junit: "test_apps/${TEST_DIRNAME}/result.xml"
     expire_in: 1 week
+
+test (basic):
+  extends:
+    - ._default_test_script
+    - ._default_test_artifacts
+    - .default_matrix
+    - .test_template
+  needs:
+    - job: build (basic)
+      artifacts: true
+  variables:
+    TEST_DIRNAME: esp_amp_basic_tests
+
+test (light sleep):
+  extends:
+    - ._default_test_script
+    - ._default_test_artifacts
+    - .subcore_type_lp_matrix
+    - .test_template
+  needs:
+    - job: build (light sleep)
+      artifacts: true
+    - job: test (basic)
+      artifacts: false
+  variables:
+    TEST_DIRNAME: esp_amp_light_sleep_tests

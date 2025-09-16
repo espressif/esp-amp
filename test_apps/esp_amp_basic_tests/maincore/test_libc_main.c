@@ -32,7 +32,7 @@ extern const uint8_t subcore_libc_sub_test_bin_end[]   asm("_binary_subcore_test
 TEST_CASE("libc functions on subcore", "[esp_amp]")
 {
     esp_amp_init();
-    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_alloc(SYS_INFO_ID_TEST_BITS, sizeof(uint32_t));
+    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_alloc(SYS_INFO_ID_TEST_BITS, sizeof(uint32_t), SYS_INFO_CAP_HP);
     atomic_init(test_bits, 0);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_amp_load_sub(subcore_libc_sub_test_bin_start));

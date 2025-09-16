@@ -1,71 +1,86 @@
-# Define reusable EXAMPLE list
-.example_list: &example_list
-  - build_system::unified_build
-  - build_system::separate_build::maincore_project
-  - build_system::separate_build::subcore_project
-  - event
-  - rpc::maincore_client_subcore_server
-  - rpc::subcore_client_maincore_server
-  - rpmsg_send_recv
-  - software_interrupt
-  - subcore_use_hp_ram
-  - virtqueue
+include: /.gitlab/template.yml
 
-example build:
-  stage: extra
-  tags:
-    - builder
-  image: espressif/idf:${IDF_VER}
-  interruptible: false
-  dependencies: []
-  when: manual
-  rules:
-    - if: $CI_COMMIT_BRANCH
-    - if: $CI_MERGE_REQUEST_ID
-      changes:
-        compare_to: "refs/heads/main"
-        paths:
-          - .gitlab/**/*.yml
-          - .gitlab-ci.yml
-          - components/esp_amp/**/*
-          - examples/**/*
-  parallel:
-    matrix:
-      - IDF_VER: ["release-v5.3", "release-v5.4", "release-v5.5"]
-        TARGET: ["esp32c6", "esp32p4"]
-        EXAMPLE: *example_list
-      - IDF_VER: ["release-v5.5"]
-        TARGET: ["esp32c5"]
-        EXAMPLE: *example_list
-  variables:
-    IDF_CCACHE_ENABLE: 1
-    CCACHE_BASEDIR: $CI_PROJECT_DIR
-    CCACHE_DIR: $CI_PROJECT_DIR/ccache
-    CCACHE_NOHASHDIR: 1
-    CCACHE_SLOPPINESS: "locale,time_macros,random_seed"
-    CCACHE_MAXSIZE: "100M"
-  cache:
-    - key: ccache-${IDF_VER}
-      paths:
-        - $CCACHE_DIR
-      policy: pull-push
-
-  before_script:
-    - ccache --zero-stats
-    - cd examples
-    - 'export EXAMPLE_PATH="${EXAMPLE//:://}"'
-    - echo "Building example ${EXAMPLE} for target ${TARGET} with IDF ${IDF_VER}"
-    - cd "${EXAMPLE_PATH}"
+._default_example_build_script:
   script:
     - export IDF_TARGET=${TARGET}
     - idf.py build
-  after_script:
-    - ccache --show-stats --verbose --verbose
-  artifacts:
-    name: "${EXAMPLE}-binaries-${TARGET}-${IDF_VER}-${CI_COMMIT_REF_SLUG}"
-    paths:
-      - "examples/**/build/*.map"
-      - "examples/**/build/config/sdkconfig.json"
-      - "examples/**/build/log/*"
-      - "examples/**/build/build.ninja"
-    expire_in: 1 week
+
+build (example, build_system, unified_build):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: build_system/unified_build
+
+build (example, build_system, separate_build, maincore_project):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: build_system/separate_build/maincore_project
+
+build (example, build_system, separate_build, subcore_project):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: build_system/separate_build/subcore_project
+
+build (example, event):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: event
+
+build (example, rpc, maincore_client_subcore_server):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: rpc/maincore_client_subcore_server
+
+build (example, rpc, subcore_client_maincore_server):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: rpc/subcore_client_maincore_server
+
+build (example, rpmsg_send_recv):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: rpmsg_send_recv
+
+build (example, software_interrupt):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: software_interrupt
+
+build (example, virtqueue):
+  extends:
+    - ._default_example_build_script
+    - .default_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: virtqueue
+
+build (example, light_sleep):
+  extends:
+    - ._default_example_build_script
+    - .subcore_type_lp_matrix
+    - .example_template
+  variables:
+    EXAMPLE_DIRNAME: light_sleep

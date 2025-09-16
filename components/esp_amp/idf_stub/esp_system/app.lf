@@ -1,0 +1,115 @@
+[sections:sdata]
+entries:
+    .sdata+
+
+[scheme:default]
+entries:
+    text -> text
+    rodata -> rodata
+    data -> data
+    sdata -> data
+    bss -> bss
+    common -> bss
+    extram_bss -> bss
+    legacy_bss -> bss
+    iram -> text
+    iram_data -> data
+    iram_bss -> bss
+    rtc_text -> rtc_text
+    rtc_data -> rtc_data
+    rtc_rodata -> rtc_rodata
+    rtc_bss -> rtc_bss
+
+[scheme:rtc]
+entries:
+    text -> rtc_text
+    data -> rtc_data
+    sdata -> rtc_data
+    rodata -> rtc_data
+    bss -> rtc_bss
+    common -> rtc_bss
+    legacy_bss -> rtc_bss
+    iram -> rtc_text
+    iram_data -> rtc_data
+    iram_bss -> rtc_bss
+
+if ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP = y:
+    [mapping:catch_all]
+        archive: *
+        entries:
+            * (rtc)
+elif ESP_AMP_SUBCORE_TYPE_LP_CORE = y && ESP_AMP_SYSTEM_AUTO_LIGHT_SLEEP_SUPPORT_ENABLE = y:
+    [mapping:esp_amp]
+        archive: libesp_amp.a
+        entries:
+            * (rtc)
+
+    [mapping:_ulp]
+        archive: libulp.a
+        entries:
+            * (rtc)
+
+    [mapping:_riscv]
+        archive: libriscv.a
+        entries:
+            * (rtc)
+
+    [mapping:_hal]
+        archive: libhal.a
+        entries:
+            * (rtc)
+
+    [mapping:_soc]
+        archive: libsoc.a
+        entries:
+            * (rtc)
+
+    [mapping:_esp_system]
+        archive: libesp_system.a
+        entries:
+            * (rtc)
+
+    [mapping:_esp_hw_support]
+        archive: libesp_hw_support.a
+        entries:
+            * (rtc)
+
+    [mapping:_esp_common]
+        archive: libesp_common.a
+        entries:
+            * (rtc)
+
+    [mapping:_c_nano]
+        archive: libc_nano.a
+        entries:
+            * (rtc)
+
+    [mapping:_m_nano]
+        archive: libm_nano.a
+        entries:
+            * (rtc)
+
+    [mapping:_gcc]
+        archive: libgcc.a
+        entries:
+            * (rtc)
+
+    [mapping:_g_nano]
+        archive: libg_nano.a
+        entries:
+            * (rtc)
+
+    [mapping:_nosys]
+        archive: libnosys.a
+        entries:
+            * (rtc)
+
+    [mapping:catch_all]
+        archive: *
+        entries:
+            * (default)
+else:
+    [mapping:catch_all]
+        archive: *
+        entries:
+            * (default)

@@ -221,7 +221,7 @@ extern "C" int main(void)
 {
     esp_amp_init();
 
-    test_bits = (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_ID_TEST_BITS, NULL);
+    test_bits = (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_ID_TEST_BITS, NULL, SYS_INFO_CAP_HP);
 
     esp_amp_sw_intr_add_handler(SW_INTR_ID_ISR_FLOAT, test_float_in_isr, NULL);
 

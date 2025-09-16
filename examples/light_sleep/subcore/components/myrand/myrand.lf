@@ -1,0 +1,4 @@
+[mapping:_myrand]
+archive: libmyrand.a
+entries:
+    * (default)

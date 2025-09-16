@@ -1,0 +1,16 @@
+#include "sdkconfig.h"
+#include "ld.common"
+#include "esp_amp_mem_priv.h"
+
+MEMORY
+{
+  app_desc(RW) :           ORIGIN = 0x42000020 , LENGTH = 0x100
+  /*first 128byte for exception/interrupt vectors*/
+  vector_table(RX) :       ORIGIN = RTC_MEM_START , LENGTH = 0x80
+  rtc_ram(RWX) :           ORIGIN = RTC_MEM_START + 0x80, LENGTH = RTC_MEM_SIZE - 0x80 - CONFIG_ULP_SHARED_MEM - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE
+  ulp_shared_mem(RW) :     ORIGIN = RTC_MEM_START + RTC_MEM_SIZE - CONFIG_ULP_SHARED_MEM - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE, LENGTH = CONFIG_ULP_SHARED_MEM
+  rtc_sys_info(RW) :       ORIGIN = RTC_MEM_START + RTC_MEM_SIZE - ESP_AMP_RTC_SHARED_MEM_POOL_SIZE, LENGTH = ESP_AMP_RTC_SHARED_MEM_POOL_SIZE
+#if !CONFIG_ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP
+  hp_ram(RWX) :            ORIGIN = SUBCORE_USE_HP_MEM_START, LENGTH = SUBCORE_USE_HP_MEM_SIZE
+#endif
+}

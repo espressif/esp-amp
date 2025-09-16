@@ -52,3 +52,17 @@ Similar to maincore project, subcore project also supports three different asser
 - `CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE`: Most verbose. Assertion content and line number will be printed on failure. The abundant assertion information is helpful for debugging, but significantly increases code size. **Use during development.**
 - `CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT`: Enable silent assertions. Less verbose. Failed assertions will only print aborting address, and user needs to find line number manually. On the other hand, it introduces minimal overhead. **Recommended for production builds where some safety is needed.**
 - `CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE`: Assertions are disabled. There won't be an abort even when fatal errors happen. Device may run into undefined behavior. **Use only when code size is extremely critical and you're confident in code correctness.**
+
+## Link Time Optimization (LTO)
+
+Link Time Optimization (LTO) can further reduce binary size by enabling more aggressive optimizations across the entire program. When enabled, LTO generates an intermediate representation that allows the linker to treat multiple object files as a single compilation unit, enabling cross-module optimizations that are not possible during normal compilation.
+
+However, LTO can interfere with ESP-IDF's linker script generation system (ldgen). During LTO, symbol names that guide ldgen's section placement decisions may be modified or eliminated, causing ldgen to place objects and sections in incorrect memory destinations. 
+
+In ESP-AMP, LTO can be safely enabled only when `CONFIG_ESP_AMP_SUBCORE_BUILD_TYPE_PURE_RTC_RAM_APP=y` is configured. In this build type, all sections are placed in RTC RAM, providing only one possible destination. This ensures ldgen to produce correct results even with LTO enabled.
+
+**Note:** The standard `idf.py size` command does not work correctly with LTO-enabled builds. Use the next-generation size analysis tool instead:
+
+```shell
+python3 -m esp_idf_size.ng --lto [--archives] [--files] [--diff another_map_file] map_file
+```

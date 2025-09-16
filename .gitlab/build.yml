@@ -1,54 +1,42 @@
 include: /.gitlab/template.yml
 
-build (basic):
-  extends: .test_apps_basic_template
-  stage: build
-  tags:
-    - builder
-  image: espressif/idf:${IDF_VER}
+._default_build_script:
   variables:
-    RENAMED_BUILD_DIR: build_idf-${IDF_VER}_${TARGET}
-    IDF_CCACHE_ENABLE: 1
-    CCACHE_BASEDIR: $CI_PROJECT_DIR
-    CCACHE_DIR: $CI_PROJECT_DIR/ccache
-    CCACHE_NOHASHDIR: 1
-    CCACHE_SLOPPINESS: "locale,time_macros,random_seed"
-    CCACHE_MAXSIZE: "100M"
-  cache:
-    - key: ccache-${IDF_VER}
-      paths:
-        - $CCACHE_DIR
-      policy: pull-push
-
-  before_script:
-    - ccache --zero-stats
-    - echo "Building application ${APP_PROJECT_NAME} for target ${TARGET} in ${BASIC_TEST_PATH} with IDF ${IDF_VER}"
-    - cd "${BASIC_TEST_PATH}"
+    RENAMED_BUILD_DIR: build_${IDF_VER}_${TARGET}
   script:
     - export IDF_TARGET=${TARGET}
     - idf.py build
-    - |
-      if [ -d "build" ]; then
-        echo "Renaming build directory to ${RENAMED_BUILD_DIR}"
-        mv build "${RENAMED_BUILD_DIR}"
-      else
-        echo "Error: 'build' directory not found after idf.py build."
-        exit 1
-      fi
-  after_script:
-    - ccache --show-stats --verbose --verbose
+    - mv build ${RENAMED_BUILD_DIR}
+
+._default_build_artifacts:
   artifacts:
-    name: "$test_apps_basic-binaries-${TARGET}-${IDF_VER}-${CI_COMMIT_REF_SLUG}"
+    name: "artifacts-${TEST_DIRNAME}-${TARGET}-${IDF_VER}-${CI_COMMIT_REF_SLUG}"
     paths:
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/flasher_args.json"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/*.bin"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/*.map"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/*.elf"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/bootloader/bootloader.bin"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/bootloader/bootloader.elf"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/bootloader/bootloader.map"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/partition_table/*.bin"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/config/sdkconfig.json"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/log/*"
-      - "${BASIC_TEST_PATH}/${RENAMED_BUILD_DIR}/build.ninja"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/flasher_args.json"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/*.bin"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/*.map"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/*.elf"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/bootloader/bootloader.bin"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/bootloader/bootloader.elf"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/bootloader/bootloader.map"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/partition_table/*.bin"
+      - "test_apps/${TEST_DIRNAME}/${RENAMED_BUILD_DIR}/config/sdkconfig.json"
     expire_in: 1 week
+
+build (basic):
+  extends:
+    - ._default_build_script
+    - ._default_build_artifacts
+    - .default_matrix
+    - .build_template
+  variables:
+    TEST_DIRNAME: esp_amp_basic_tests
+
+build (light sleep):
+  extends:
+    - ._default_build_script
+    - ._default_build_artifacts
+    - .subcore_type_lp_matrix
+    - .build_template
+  variables:
+    TEST_DIRNAME: esp_amp_light_sleep_tests

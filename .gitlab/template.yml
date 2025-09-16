@@ -1,20 +1,131 @@
-.test_apps_basic_template:
+._ccache:
+  variables:
+    IDF_CCACHE_ENABLE: 1
+    CCACHE_BASEDIR: $CI_PROJECT_DIR
+    CCACHE_DIR: $CI_PROJECT_DIR/ccache
+    CCACHE_NOHASHDIR: 1
+    CCACHE_SLOPPINESS: locale,time_macros,random_seed
+    CCACHE_MAXSIZE: 150M
+  cache:
+    - key: ccache-${IDF_VER}
+      paths:
+        - $CCACHE_DIR
+      policy: pull-push
+
+# --- Matrices -----------------------------------------------------------------
+
+.default_matrix:
   parallel:
     matrix:
-      - IDF_VER: ["release-v5.3", "release-v5.4", "release-v5.5"]
+      - IDF_VER: ["release-v5.3"]
+        TARGET: ["esp32c6", "esp32p4"]
+      - IDF_VER: ["release-v5.4"]
         TARGET: ["esp32c6", "esp32p4"]
       - IDF_VER: ["release-v5.5"]
-        TARGET: ["esp32c5"]
+        TARGET: ["esp32c6", "esp32p4", "esp32c5"]
   interruptible: true
+
+.subcore_type_lp_matrix:
+  parallel:
+    matrix:
+      - IDF_VER: ["release-v5.3"]
+        TARGET: ["esp32c6"]
+      - IDF_VER: ["release-v5.4"]
+        TARGET: ["esp32c6"]
+      - IDF_VER: ["release-v5.5"]
+        TARGET: ["esp32c6", "esp32c5"]
+  interruptible: true
+
+# --- Build --------------------------------------------------------------------
+
+._build_trigger:
   rules:
-    - if: $CI_COMMIT_BRANCH
-    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
       changes:
-        compare_to: "refs/heads/main"
+        compare_to: refs/heads/main
         paths:
           - .gitlab/**/*.yml
           - .gitlab-ci.yml
-          - components/esp_amp/**/*
-          - test_apps/esp_amp_basic_tests/**/*
+          - components/**/*
+          - $JOB_SPECIFIC_PATH
+
+.build_template:
+  extends:
+    - ._build_trigger
+    - ._ccache
+  stage: core
+  tags:
+    - builder
+  image: espressif/idf:${IDF_VER}
   variables:
-    BASIC_TEST_PATH: "test_apps/esp_amp_basic_tests"
+    JOB_SPECIFIC_PATH: test_apps/${TEST_DIRNAME}/**/*
+  before_script:
+    - echo "Building application ${APP_PROJECT_NAME} for target ${TARGET} in ${TEST_DIRNAME} with IDF ${IDF_VER}"
+    - ccache --zero-stats
+    - cd test_apps
+    - cd ${TEST_DIRNAME}
+  after_script:
+    - ccache --show-stats --verbose --verbose
+
+# --- Device Test --------------------------------------------------------------
+
+.test_template:
+  stage: core
+  tags:
+    - tester
+  image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
+  variables:
+    UV_VERSION: 0.7.20
+    PYTHON_VERSION: "3.12"
+    BASE_LAYER: bookworm-slim
+    UV_LINK_MODE: copy
+    UV_CACHE_DIR: $CI_PROJECT_DIR/uv-cache
+  cache:
+    - key:
+        files:
+          - test_apps/uv.lock
+      paths:
+        - ${UV_CACHE_DIR}
+      policy: pull-push
+  resource_group: ${TARGET}
+  before_script:
+    - echo "Testing application for target ${TARGET} in ${TEST_DIRNAME} with IDF ${IDF_VER}"
+    - cd test_apps
+    - uv sync
+    - cd ${TEST_DIRNAME}
+  after_script:
+    - uv cache prune
+
+# --- Example ------------------------------------------------------------------
+
+._example_trigger:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/main
+        paths:
+          - .gitlab/**/*.yml
+          - .gitlab-ci.yml
+          - components/**/*
+          - $JOB_SPECIFIC_PATH
+      when: manual
+      allow_failure: true
+
+.example_template:
+  extends:
+    - ._example_trigger
+    - ._ccache
+  stage: extra
+  tags:
+    - builder
+  dependencies: []
+  image: espressif/idf:${IDF_VER}
+  variables:
+    JOB_SPECIFIC_PATH: examples/${EXAMPLE_DIRNAME}/**/*
+  before_script:
+    - echo "Building example ${EXAMPLE_DIRNAME} for target ${TARGET} with IDF ${IDF_VER}"
+    - ccache --zero-stats
+    - cd examples
+    - cd ${EXAMPLE_DIRNAME}
+  after_script:
+    - ccache --show-stats --verbose --verbose

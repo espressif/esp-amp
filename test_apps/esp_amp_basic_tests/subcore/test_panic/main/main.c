@@ -29,7 +29,7 @@ int main(void)
 {
     esp_amp_init();
 
-    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_ID_TEST_BITS, NULL);
+    atomic_uint *test_bits = (atomic_uint *)esp_amp_sys_info_get(SYS_INFO_ID_TEST_BITS, NULL, SYS_INFO_CAP_HP);
 
     if (atomic_load(test_bits) == TEST_ID_ABORT) {
         test_abort();
