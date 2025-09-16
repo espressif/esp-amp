@@ -1,3 +1,5 @@
+# --- Misc ---------------------------------------------------------------------
+
 ._ccache:
   variables:
     IDF_CCACHE_ENABLE: 1
@@ -11,6 +13,32 @@
       paths:
         - $CCACHE_DIR
       policy: pull-push
+
+# --- Trigger ------------------------------------------------------------------
+
+._core_trigger:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/main
+        paths:
+          - .gitlab/**/*.yml
+          - .gitlab-ci.yml
+          - components/**/*
+          - $JOB_SPECIFIC_PATH
+
+._extra_trigger:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/main
+        paths:
+          - .gitlab/**/*.yml
+          - .gitlab-ci.yml
+          - components/**/*
+          - $JOB_SPECIFIC_PATH
+      when: manual
+      allow_failure: true
 
 # --- Matrices -----------------------------------------------------------------
 
@@ -38,20 +66,9 @@
 
 # --- Build --------------------------------------------------------------------
 
-._build_trigger:
-  rules:
-    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
-      changes:
-        compare_to: refs/heads/main
-        paths:
-          - .gitlab/**/*.yml
-          - .gitlab-ci.yml
-          - components/**/*
-          - $JOB_SPECIFIC_PATH
-
 .build_template:
   extends:
-    - ._build_trigger
+    - ._core_trigger
     - ._ccache
   stage: core
   tags:
@@ -70,11 +87,15 @@
 # --- Device Test --------------------------------------------------------------
 
 .test_template:
+  extends:
+    - ._core_trigger
   stage: core
   tags:
     - tester
   image: ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}
   variables:
+    JOB_SPECIFIC_PATH: test_apps/${TEST_DIRNAME}/**/*
+
     UV_VERSION: 0.7.20
     PYTHON_VERSION: "3.12"
     BASE_LAYER: bookworm-slim
@@ -98,22 +119,9 @@
 
 # --- Example ------------------------------------------------------------------
 
-._example_trigger:
-  rules:
-    - if: $CI_MERGE_REQUEST_ID || $CI_COMMIT_BRANCH
-      changes:
-        compare_to: refs/heads/main
-        paths:
-          - .gitlab/**/*.yml
-          - .gitlab-ci.yml
-          - components/**/*
-          - $JOB_SPECIFIC_PATH
-      when: manual
-      allow_failure: true
-
 .example_template:
   extends:
-    - ._example_trigger
+    - ._extra_trigger
     - ._ccache
   stage: extra
   tags:
